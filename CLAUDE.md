@@ -2,6 +2,14 @@
 
 `PROJECT_SPEC.md` is the source of truth. Read it, `DECISIONS.md` and `PROGRESS.md` before starting work.
 
+Documentation hierarchy:
+
+- `PROJECT_SPEC.md`: master product requirements and technical constraints.
+- `PRODUCT_UX_SPEC.md`: screen designs, user journeys, interactions and UX behaviour.
+- `ARCHITECTURE.md`: technical architecture and infrastructure.
+
+If these documents conflict, flag the conflict to the project owner. Never silently choose one.
+
 - **Never provision paid infrastructure without the project owner's explicit approval.** This applies at every AWS help level below. Ask before creating any cloud resource.
 - Build one phase at a time, and have each phase reviewed before starting the next.
 - Do not silently change a selected technology. Record architectural changes in `DECISIONS.md`.
