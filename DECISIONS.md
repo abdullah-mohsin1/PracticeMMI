@@ -73,9 +73,8 @@ Next.js with Route Handlers on Cloudflare Workers through OpenNext, a separate W
 The web app and queue consumer share one `package.json`, with `src/` for shared code and `workers/processor/` for the consumer entry point.
 **Why:** both need the same schema and validation code, and a workspace setup adds tooling without a current need. **Trade-off:** the consumer's bundle must avoid importing web-only code, which the module boundaries in `ARCHITECTURE.md` enforce.
 
-### D-003: Stay on OpenNext although Cloudflare now recommends vinext — *Open*
-Cloudflare's guide recommends vinext for new Next.js apps and describes OpenNext as the path for existing apps. vinext is still in beta. The spec requires OpenNext and forbids vinext in production without approval, so the design follows the spec.
-**Recommendation:** stay on OpenNext. It builds and runs in the compatibility test, and it avoids depending on a beta. Revisit once vinext leaves beta.
+### D-003: Stay on OpenNext although Cloudflare now recommends vinext — *Decided by owner, November 8, 2026*
+Cloudflare's guide recommends vinext for new Next.js apps and describes OpenNext as the path for existing apps. vinext is still in beta. The spec requires OpenNext and forbids vinext in production without approval. OpenNext builds and runs in the compatibility test, and it avoids depending on a beta. Revisit once vinext leaves beta.
 
 ### D-004: Deploy staging on the Workers Free plan first, then measure — *Proposed*
 The spec budgets for Workers Paid but also forbids paid resources without approval. Phase 1 deploys to Free and records CPU time per request. Paid is requested from the owner only when measurements or queue needs justify it, and is expected by Phase 5.
@@ -154,7 +153,6 @@ A single `app_settings` row holds the pause switch, monthly AI budget and per-us
 
 | ID | Decision | Needed by |
 |---|---|---|
-| D-003 | Stay on OpenNext or evaluate vinext | Phase 1 |
 | — | Approve creating Cloudflare, Neon and Cognito development resources | Phases 1–2 |
 | D-017 | AWS project after May 9, 2027 | Before that date |
 | — | Author of the question bank and rubric | Phase 3 |
