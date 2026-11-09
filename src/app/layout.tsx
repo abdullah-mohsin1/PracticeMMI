@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "PracticeMMI",
-  description: "Multiple Mini Interview practice for Canadian medical school applicants.",
+  description: "Private Multiple Mini Interview practice.",
   robots: { index: false, follow: false },
 };
 

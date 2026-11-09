@@ -1,9 +1,11 @@
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 
-// cacheComponents and partialPrefetching stay off: see D-006 in DECISIONS.md.
-const nextConfig: NextConfig = {};
+// GitHub Pages serves the repository under a sub-path, so the build sets NEXT_PUBLIC_BASE_PATH.
+const nextConfig: NextConfig = {
+  output: "export",
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? "",
+  trailingSlash: true,
+  images: { unoptimized: true },
+};
 
 export default nextConfig;
-
-initOpenNextCloudflareForDev();
