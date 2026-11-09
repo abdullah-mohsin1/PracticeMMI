@@ -2,17 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function hasVerifiedEmail() {
-      return request.auth != null && request.auth.token.email_verified == true;
-    }
-
-    function isApproved() {
-      return hasVerifiedEmail()
-        && exists(/databases/$(database)/documents/approvedUsers/$(request.auth.token.email.lower()));
-    }
-
     function isOwner(uid) {
-      return isApproved() && request.auth.uid == uid;
+      return request.auth != null && request.auth.uid == uid;
     }
 
     function isValidQuestion() {
@@ -25,12 +16,6 @@ service cloud.firestore {
         && data.description is string && data.description.size() <= 2000
         && data.topics is list && data.topics.size() <= 10
         && data.updatedAt == request.time;
-    }
-
-    // Managed only in the Firebase console. Each person can check only their own entry.
-    match /approvedUsers/{email} {
-      allow get: if hasVerifiedEmail() && request.auth.token.email.lower() == email;
-      allow list, write: if false;
     }
 
     match /users/{uid}/questions/{questionId} {

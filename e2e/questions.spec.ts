@@ -1,18 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const PROJECT = "demo-practicemmi";
-const FIRESTORE = `http://127.0.0.1:8080/v1/projects/${PROJECT}/databases/(default)/documents`;
-const OWNER_HEADERS = { Authorization: "Bearer owner" };
-
-async function approve(email: string) {
-  const response = await fetch(`${FIRESTORE}/approvedUsers?documentId=${encodeURIComponent(email)}`, {
-    method: "POST",
-    headers: OWNER_HEADERS,
-    body: JSON.stringify({ fields: {} }),
-  });
-  if (!response.ok && response.status !== 409) throw new Error(`Approve failed: ${response.status}`);
-}
-
 async function signIn(page: Page, email: string) {
   await page.goto("/PracticeMMI/questions/");
   const popupPromise = page.waitForEvent("popup");
@@ -32,8 +19,7 @@ async function signIn(page: Page, email: string) {
 
 const question = (page: Page, text: string) => page.getByRole("listitem").filter({ hasText: text });
 
-test("an approved person can create, read, edit and delete questions that persist", async ({ page }) => {
-  await approve("alice@example.test");
+test("a signed-in person can create, read, edit and delete questions that persist", async ({ page }) => {
   await signIn(page, "alice@example.test");
   await expect(page.getByText("Signed in as alice@example.test.")).toBeVisible();
   await expect(page.getByText("You haven't added any questions yet.")).toBeVisible();
@@ -61,29 +47,33 @@ test("an approved person can create, read, edit and delete questions that persis
   await expect(page.getByRole("button", { name: "Sign in with Google" })).toBeVisible();
 });
 
-test("two approved people never see each other's questions", async ({ page }) => {
-  await approve("carol@example.test");
-  await approve("dave@example.test");
+test("two accounts have separate libraries and never see each other's questions", async ({ page }) => {
+  const signOut = async () => {
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page.getByRole("button", { name: "Sign in with Google" })).toBeVisible();
+  };
+  const add = async (text: string) => {
+    await page.getByRole("textbox", { name: "Question", exact: true }).fill(text);
+    await page.getByRole("button", { name: "Add question" }).click();
+    await expect(question(page, text)).toBeVisible();
+  };
+
   await signIn(page, "carol@example.test");
-  await page.getByRole("textbox", { name: "Question", exact: true }).fill("Carol's private question");
-  await page.getByRole("button", { name: "Add question" }).click();
-  await expect(question(page, "Carol's private question")).toBeVisible();
-  await page.getByRole("button", { name: "Sign out" }).click();
-  await expect(page.getByRole("button", { name: "Sign in with Google" })).toBeVisible();
+  await add("Carol's private question");
+  await signOut();
 
   await signIn(page, "dave@example.test");
   await expect(page.getByText("You haven't added any questions yet.")).toBeVisible();
   await expect(page.getByText("Carol's private question")).toHaveCount(0);
-});
+  await add("Dave's private question");
+  await signOut();
 
-test("an unapproved person is kept out", async ({ page }) => {
-  await signIn(page, "stranger@example.test");
-  await expect(page.getByRole("main").getByRole("alert")).toContainText("stranger@example.test isn't approved");
-  await expect(page.getByRole("button", { name: "Add question" })).toHaveCount(0);
+  await signIn(page, "carol@example.test");
+  await expect(question(page, "Carol's private question")).toBeVisible();
+  await expect(page.getByText("Dave's private question")).toHaveCount(0);
 });
 
 test("invalid input is reported without saving", async ({ page }) => {
-  await approve("erin@example.test");
   await signIn(page, "erin@example.test");
   await page.getByRole("textbox", { name: "Question", exact: true }).fill("   ");
   await page.getByRole("button", { name: "Add question" }).click();

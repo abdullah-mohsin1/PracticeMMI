@@ -21,10 +21,6 @@ npm run dev
 | `npm run test:rules` | Firestore Security Rules and question storage, on the emulator |
 | `npm run test:e2e` | The static export in a browser, with Auth and Firestore emulators |
 
-## Approving a person
-
-In the Firebase console, open Firestore and add a document to the `approvedUsers` collection. Its document ID is the person's Google address in lowercase, and it needs no fields. Delete the document to remove access. The app cannot change this list.
-
 ## Deploying
 
 Pushing to `main` deploys the site through `.github/workflows/pages.yml`. The workflow reads these repository variables: `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID` and `FIREBASE_APP_ID`.

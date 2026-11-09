@@ -7,8 +7,8 @@ PracticeMMI is now a private practice tool for a few friends, hosted as a static
 ## Completed
 
 - Static export for GitHub Pages, with the Cloudflare and OpenNext deployment removed.
-- Google sign-in through Firebase Authentication, limited to people on an approved list.
-- Personal questions in Firestore, with create, read, edit and delete, and ownership enforced by Security Rules.
+- Google sign-in through Firebase Authentication, open to any Google account.
+- Private question libraries in Firestore, with ownership enforced by Security Rules using the Firebase UID.
 - GitHub Actions for tests and Pages deployment.
 
 ## Next steps

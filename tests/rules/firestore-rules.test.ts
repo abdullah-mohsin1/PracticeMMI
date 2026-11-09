@@ -33,11 +33,10 @@ const input: QuestionInput = {
 };
 const stored = () => ({ ...input, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
 
-const person = (uid: string, email: string, emailVerified = true) =>
-  env.authenticatedContext(uid, { email, email_verified: emailVerified }).firestore() as unknown as Firestore;
-const alice = () => person("alice", "alice@example.test");
-const bob = () => person("bob", "bob@example.test");
-const stranger = () => person("stranger", "stranger@example.test");
+const person = (uid: string, email = `${uid}@example.test`) =>
+  env.authenticatedContext(uid, { email, email_verified: true }).firestore() as unknown as Firestore;
+const alice = () => person("alice");
+const bob = () => person("bob");
 const anonymous = () => env.unauthenticatedContext().firestore() as unknown as Firestore;
 const questionDoc = (db: Firestore, uid: string, id = "q1") => doc(db, "users", uid, "questions", id);
 
@@ -57,11 +56,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
-  await env.withSecurityRulesDisabled(async (context) => {
-    const db = context.firestore() as unknown as Firestore;
-    await setDoc(doc(db, "approvedUsers", "alice@example.test"), {});
-    await setDoc(doc(db, "approvedUsers", "bob@example.test"), {});
-  });
 });
 
 afterAll(() => env.cleanup());
@@ -100,7 +94,7 @@ describe("ownership", () => {
     await assertSucceeds(getDoc(questionDoc(alice(), "alice")));
   });
 
-  it("stops another approved user reading, listing, creating, editing or deleting", async () => {
+  it("stops another signed-in user reading, listing, creating, editing or deleting", async () => {
     await assertFails(getDoc(questionDoc(bob(), "alice")));
     await assertFails(getDocs(collection(bob(), "users", "alice", "questions")));
     await assertFails(setDoc(questionDoc(bob(), "alice", "planted"), stored()));
@@ -113,52 +107,45 @@ describe("ownership", () => {
   });
 });
 
-describe("approved users only", () => {
-  beforeEach(seedAliceQuestion);
+describe("two independent accounts", () => {
+  it("lets any new account use its own library without setup", async () => {
+    const db = person("brand-new-user");
+    const id = await createQuestion(db, "brand-new-user", input);
+    expect(await listQuestions(db, "brand-new-user")).toEqual([{ id, ...input }]);
+  });
+
+  it("denies every operation in both directions", async () => {
+    const aliceId = await createQuestion(alice(), "alice", input);
+    const bobId = await createQuestion(bob(), "bob", { ...input, questionText: "Bob's" });
+
+    for (const [db, owner, id] of [
+      [bob(), "alice", aliceId],
+      [alice(), "bob", bobId],
+    ] as const) {
+      await assertFails(getDoc(questionDoc(db, owner, id)));
+      await assertFails(getDocs(collection(db, "users", owner, "questions")));
+      await assertFails(listQuestions(db, owner));
+      await assertFails(createQuestion(db, owner, input));
+      await assertFails(setDoc(questionDoc(db, owner, id), stored()));
+      await assertFails(updateQuestion(db, owner, id, { ...input, questionText: "Changed" }));
+      await assertFails(deleteQuestion(db, owner, id));
+    }
+
+    expect((await listQuestions(alice(), "alice")).map((question) => question.questionText)).toEqual([input.questionText]);
+    expect((await listQuestions(bob(), "bob")).map((question) => question.questionText)).toEqual(["Bob's"]);
+  });
+
+  it("identifies people by UID, not by email address", async () => {
+    await seedAliceQuestion();
+    await assertFails(getDoc(questionDoc(person("impostor", "alice@example.test"), "alice")));
+  });
 
   it("denies signed-out visitors", async () => {
+    await seedAliceQuestion();
     await assertFails(getDoc(questionDoc(anonymous(), "alice")));
+    await assertFails(getDocs(collection(anonymous(), "users", "alice", "questions")));
     await assertFails(addDoc(collection(anonymous(), "users", "alice", "questions"), stored()));
-  });
-
-  it("denies an unapproved account, even in its own space", async () => {
-    const db = stranger();
-    await assertFails(getDocs(collection(db, "users", "stranger", "questions")));
-    await assertFails(setDoc(questionDoc(db, "stranger"), stored()));
-  });
-
-  it("denies an approved address that isn't verified", async () => {
-    const db = person("alice", "alice@example.test", false);
-    await assertFails(getDoc(questionDoc(db, "alice")));
-  });
-
-  it("matches approved addresses regardless of case", async () => {
-    await assertSucceeds(getDoc(questionDoc(person("alice", "Alice@Example.test"), "alice")));
-  });
-
-  it("removes access once a person is taken off the list", async () => {
-    await env.withSecurityRulesDisabled(async (context) => {
-      await deleteDoc(doc(context.firestore() as unknown as Firestore, "approvedUsers", "alice@example.test"));
-    });
-    await assertFails(getDoc(questionDoc(alice(), "alice")));
-  });
-});
-
-describe("approved user list", () => {
-  it("lets a person check only their own entry", async () => {
-    await assertSucceeds(getDoc(doc(alice(), "approvedUsers", "alice@example.test")));
-    await assertSucceeds(getDoc(doc(stranger(), "approvedUsers", "stranger@example.test")));
-    await assertFails(getDoc(doc(alice(), "approvedUsers", "bob@example.test")));
-  });
-
-  it("can't be listed", async () => {
-    await assertFails(getDocs(collection(alice(), "approvedUsers")));
-  });
-
-  it("can't be changed by anyone in the app, including to approve themselves", async () => {
-    await assertFails(setDoc(doc(stranger(), "approvedUsers", "stranger@example.test"), {}));
-    await assertFails(setDoc(doc(alice(), "approvedUsers", "friend@example.test"), {}));
-    await assertFails(deleteDoc(doc(alice(), "approvedUsers", "bob@example.test")));
+    await assertFails(deleteDoc(questionDoc(anonymous(), "alice")));
   });
 });
 
@@ -196,5 +183,6 @@ describe("everything else", () => {
   it("is denied by default", async () => {
     await assertFails(getDoc(doc(alice(), "other", "doc")));
     await assertFails(setDoc(doc(alice(), "users", "alice"), { name: "x" }));
+    await assertFails(getDoc(doc(alice(), "approvedUsers", "alice@example.test")));
   });
 });
