@@ -1,6 +1,6 @@
 # Architecture
 
-**Status:** design only. Nothing here is implemented yet. Update this file as each phase ships, so it describes what exists. Reasoning and evidence are in `DECISIONS.md`.
+**Status:** mostly design. Only the Phase 1 foundation exists: the Next.js app on Workers, a health route, environment validation and logging. Update this file as each phase ships, so it describes what exists. Reasoning and evidence are in `DECISIONS.md`.
 
 ## System overview
 

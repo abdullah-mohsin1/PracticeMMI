@@ -4,8 +4,8 @@ Each phase is reviewed by the project owner before the next begins. Every phase 
 
 | Phase | Name | Status |
 |---|---|---|
-| 0 | Architecture and planning | Awaiting review |
-| 1 | Project foundation | Not started |
+| 0 | Architecture and planning | Complete |
+| 1 | Project foundation | Awaiting CI run on GitHub and review |
 | 2 | Database and authentication | Not started |
 | 3 | Question bank and dashboard | Not started |
 | 4 | Interview simulator | Not started |

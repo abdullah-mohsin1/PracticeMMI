@@ -79,6 +79,16 @@ Cloudflare's guide recommends vinext for new Next.js apps and describes OpenNext
 ### D-004: Deploy staging on the Workers Free plan first, then measure — *Proposed*
 The spec budgets for Workers Paid but also forbids paid resources without approval. Phase 1 deploys to Free and records CPU time per request. Paid is requested from the owner only when measurements or queue needs justify it, and is expected by Phase 5.
 
+**Measured on staging, November 8, 2026** (`wrangler tail`, Free plan, about 20 requests per route):
+
+| Route | Median CPU | Maximum CPU | Over 10 ms | Failures |
+|---|---|---|---|---|
+| `/` | 12 ms | 27 ms | 10 of 20 | 0 |
+| `/api/health` | 4 ms | 8 ms | 0 of 21 | 0 |
+| Not-found page | 20 ms | 38 ms | 16 of 20 | 0 |
+
+Cloudflare analytics over 96 requests showed a 99th percentile of 246 ms, which is likely cold starts. Cloudflare did not reject any request, but rendered pages already often exceed the published 10 ms limit before any database or token work. Staging can stay on Free for now. Workers Paid should be expected before real users, and may be needed earlier if requests start failing.
+
 ### D-005: Use Node 24 for development — *Proposed*
 Wrangler requires Node 22 or later. Node 24 is pinned with `.nvmrc` in Phase 1. It is already installed through `nvm`, and the machine's default stays on Node 20.
 
