@@ -19,6 +19,7 @@ import {
   type Firestore,
 } from "firebase/firestore";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { firestoreImportStore, importDrafts, type ImportDraft } from "@/lib/questions/import/importer";
 import { createQuestion, deleteQuestion, listQuestions, updateQuestion } from "@/lib/questions/repository";
 import type { QuestionInput } from "@/lib/questions/schema";
 
@@ -31,6 +32,7 @@ const input: QuestionInput = {
   difficulty: "medium",
   topics: ["consent"],
 };
+const asListed = { ...input, followUpQuestions: [], source: "manual", originalCategory: null };
 const stored = () => ({ ...input, createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
 
 const person = (uid: string, email = `${uid}@example.test`) =>
@@ -65,7 +67,7 @@ describe("question CRUD through the app's repository", () => {
     const db = alice();
     const id = await createQuestion(db, "alice", input);
 
-    expect(await listQuestions(db, "alice")).toEqual([{ id, ...input }]);
+    expect(await listQuestions(db, "alice")).toEqual([{ id, ...asListed }]);
 
     await updateQuestion(db, "alice", id, { ...input, questionText: "Edited", difficulty: "hard" });
     expect((await listQuestions(db, "alice"))[0]).toMatchObject({ id, questionText: "Edited", difficulty: "hard" });
@@ -111,7 +113,7 @@ describe("two independent accounts", () => {
   it("lets any new account use its own library without setup", async () => {
     const db = person("brand-new-user");
     const id = await createQuestion(db, "brand-new-user", input);
-    expect(await listQuestions(db, "brand-new-user")).toEqual([{ id, ...input }]);
+    expect(await listQuestions(db, "brand-new-user")).toEqual([{ id, ...asListed }]);
   });
 
   it("denies every operation in both directions", async () => {
@@ -176,6 +178,98 @@ describe("question validation", () => {
     await assertFails(
       updateDoc(questionDoc(alice(), "alice"), { createdAt: Timestamp.fromMillis(0), updatedAt: serverTimestamp() }),
     );
+  });
+});
+
+describe("imported questions", () => {
+  const draft = (id: string, questionText: string): ImportDraft => ({
+    id,
+    key: id,
+    category: "communication",
+    questionText,
+    followUpQuestions: ["And then what?"],
+    originalCategory: "Communication skills",
+  });
+  const imported = () => ({
+    ...stored(),
+    source: "pdf_import",
+    originalCategory: "Section",
+    importedAt: serverTimestamp(),
+  });
+
+  it("saves to the signed-in person's library with the metadata", async () => {
+    const result = await importDrafts(firestoreImportStore(alice(), "alice"), [draft("pdf_1", "Imported one")]);
+    expect(result).toEqual({ saved: 1, alreadySaved: 0, failed: [] });
+    expect(await listQuestions(alice(), "alice")).toEqual([
+      {
+        id: "pdf_1",
+        category: "communication",
+        questionText: "Imported one",
+        description: "",
+        difficulty: "medium",
+        topics: [],
+        followUpQuestions: ["And then what?"],
+        source: "pdf_import",
+        originalCategory: "Communication skills",
+      },
+    ]);
+  });
+
+  it("doesn't create copies when the same import runs again", async () => {
+    const drafts = [draft("pdf_1", "One"), draft("pdf_2", "Two")];
+    await importDrafts(firestoreImportStore(alice(), "alice"), drafts);
+    const second = await importDrafts(firestoreImportStore(alice(), "alice"), drafts);
+    expect(second).toEqual({ saved: 0, alreadySaved: 2, failed: [] });
+    expect(await listQuestions(alice(), "alice")).toHaveLength(2);
+  });
+
+  it("commits more than one batch", async () => {
+    const drafts = Array.from({ length: 5 }, (_, index) => draft(`pdf_${index}`, `Question ${index}`));
+    const result = await importDrafts(firestoreImportStore(alice(), "alice"), drafts, { batchSize: 2 });
+    expect(result.saved).toBe(5);
+    expect(await listQuestions(alice(), "alice")).toHaveLength(5);
+  });
+
+  it("stops another person importing into, reading or deleting an account's imports", async () => {
+    await importDrafts(firestoreImportStore(alice(), "alice"), [draft("pdf_1", "Private import")]);
+    await assertFails(setDoc(questionDoc(bob(), "alice", "pdf_2"), imported()));
+    await assertFails(getDoc(questionDoc(bob(), "alice", "pdf_1")));
+    await assertFails(getDocs(collection(bob(), "users", "alice", "questions")));
+    await assertFails(deleteDoc(questionDoc(bob(), "alice", "pdf_1")));
+    const failed = await importDrafts(firestoreImportStore(bob(), "alice"), [draft("pdf_3", "Planted")], {
+      sleep: async () => undefined,
+    });
+    expect(failed.failed).toHaveLength(1);
+  });
+
+  it("lets the owner edit and delete an import, keeping its metadata", async () => {
+    await importDrafts(firestoreImportStore(alice(), "alice"), [draft("pdf_1", "Original")]);
+    await updateQuestion(alice(), "alice", "pdf_1", { ...input, questionText: "Corrected" });
+    expect((await listQuestions(alice(), "alice"))[0]).toMatchObject({
+      questionText: "Corrected",
+      source: "pdf_import",
+      originalCategory: "Communication skills",
+    });
+    await deleteQuestion(alice(), "alice", "pdf_1");
+    expect(await listQuestions(alice(), "alice")).toEqual([]);
+  });
+
+  it("rejects changing import metadata, overwriting through batches or invalid metadata", async () => {
+    await importDrafts(firestoreImportStore(alice(), "alice"), [draft("pdf_1", "Original")]);
+    await assertFails(updateDoc(questionDoc(alice(), "alice", "pdf_1"), { source: "manual", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(questionDoc(alice(), "alice", "pdf_1"), { originalCategory: "Other", updatedAt: serverTimestamp() }));
+    await assertFails(updateDoc(questionDoc(alice(), "alice", "pdf_1"), { importedAt: serverTimestamp(), updatedAt: serverTimestamp() }));
+    await assertFails(setDoc(questionDoc(alice(), "alice", "pdf_1"), imported()));
+    await assertFails(setDoc(questionDoc(alice(), "alice", "x1"), { ...imported(), source: "web" }));
+    await assertFails(setDoc(questionDoc(alice(), "alice", "x2"), { ...imported(), importedAt: Timestamp.fromMillis(0) }));
+    await assertFails(setDoc(questionDoc(alice(), "alice", "x3"), { ...imported(), followUpQuestions: "text" }));
+    await assertFails(setDoc(questionDoc(alice(), "alice", "x4"), { ...imported(), originalCategory: "x".repeat(201) }));
+  });
+
+  it("still accepts questions saved before imports existed", async () => {
+    await seedAliceQuestion();
+    await updateQuestion(alice(), "alice", "q1", { ...input, questionText: "Edited old question" });
+    expect((await listQuestions(alice(), "alice"))[0]).toMatchObject({ questionText: "Edited old question", source: "manual" });
   });
 });
 

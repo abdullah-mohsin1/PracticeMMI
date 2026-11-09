@@ -12,13 +12,19 @@ import {
 } from "firebase/firestore";
 import { questionInputSchema, type Question, type QuestionInput } from "./schema";
 
-const questionsOf = (db: Firestore, uid: string) => collection(db, "users", uid, "questions");
+export const questionsOf = (db: Firestore, uid: string) => collection(db, "users", uid, "questions");
 
 export async function listQuestions(db: Firestore, uid: string): Promise<Question[]> {
   const snapshot = await getDocs(query(questionsOf(db, uid), orderBy("createdAt", "desc")));
   return snapshot.docs.map((entry) => {
-    const { category, questionText, description, difficulty, topics } = entry.data();
-    return { id: entry.id, ...questionInputSchema.parse({ category, questionText, description, difficulty, topics }) };
+    const { category, questionText, description, difficulty, topics, followUpQuestions, source, originalCategory } =
+      entry.data();
+    return {
+      id: entry.id,
+      ...questionInputSchema.parse({ category, questionText, description, difficulty, topics, followUpQuestions }),
+      source: source === "pdf_import" ? "pdf_import" : "manual",
+      originalCategory: typeof originalCategory === "string" ? originalCategory : null,
+    };
   });
 }
 

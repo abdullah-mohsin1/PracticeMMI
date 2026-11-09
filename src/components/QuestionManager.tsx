@@ -1,11 +1,20 @@
 "use client";
 
 import type { User } from "firebase/auth";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import { getFirebase } from "@/lib/firebase/client";
 import { logger } from "@/lib/logger";
 import { createQuestion, deleteQuestion, listQuestions, updateQuestion } from "@/lib/questions/repository";
-import { CATEGORIES, DIFFICULTIES, parseTopics, questionInputSchema, type Question } from "@/lib/questions/schema";
+import {
+  CATEGORIES,
+  CATEGORY_LABELS,
+  DIFFICULTIES,
+  parseFollowUps,
+  parseTopics,
+  questionInputSchema,
+  type Question,
+} from "@/lib/questions/schema";
 import styles from "./QuestionManager.module.css";
 
 const emptyForm = {
@@ -14,7 +23,10 @@ const emptyForm = {
   description: "",
   difficulty: "medium" as Question["difficulty"],
   topics: "",
+  followUpQuestions: "",
 };
+
+const PAGE_SIZE = 50;
 
 const capitalize = (value: string) => value[0].toUpperCase() + value.slice(1);
 
@@ -26,6 +38,20 @@ export function QuestionManager({ user }: { user: User }) {
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return (questions ?? []).filter(
+      (question) =>
+        (!categoryFilter || question.category === categoryFilter) &&
+        (!sourceFilter || question.source === sourceFilter) &&
+        (!term || question.questionText.toLowerCase().includes(term)),
+    );
+  }, [questions, search, categoryFilter, sourceFilter]);
 
   const reload = useCallback(async () => {
     setQuestions(await listQuestions(db, user.uid));
@@ -45,7 +71,11 @@ export function QuestionManager({ user }: { user: User }) {
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const parsed = questionInputSchema.safeParse({ ...form, topics: parseTopics(form.topics) });
+    const parsed = questionInputSchema.safeParse({
+      ...form,
+      topics: parseTopics(form.topics),
+      followUpQuestions: parseFollowUps(form.followUpQuestions),
+    });
     if (!parsed.success) {
       setError(parsed.error.issues[0].message);
       return;
@@ -75,6 +105,7 @@ export function QuestionManager({ user }: { user: User }) {
       description: question.description,
       difficulty: question.difficulty,
       topics: question.topics.join(", "),
+      followUpQuestions: question.followUpQuestions.join("\n"),
     });
   };
 
@@ -123,7 +154,7 @@ export function QuestionManager({ user }: { user: User }) {
             >
               {CATEGORIES.map((category) => (
                 <option key={category} value={category}>
-                  {capitalize(category)}
+                  {CATEGORY_LABELS[category]}
                 </option>
               ))}
             </select>
@@ -146,6 +177,14 @@ export function QuestionManager({ user }: { user: User }) {
             <input value={form.topics} onChange={(event) => setForm({ ...form, topics: event.target.value })} />
           </label>
         </div>
+        <label>
+          Follow-up prompts (one per line)
+          <textarea
+            rows={2}
+            value={form.followUpQuestions}
+            onChange={(event) => setForm({ ...form, followUpQuestions: event.target.value })}
+          />
+        </label>
         <div className={styles.actions}>
           <button type="submit" disabled={saving}>
             {saving ? "Saving…" : editingId ? "Save changes" : "Add question"}
@@ -161,15 +200,82 @@ export function QuestionManager({ user }: { user: User }) {
       {error && <p role="alert">{error}</p>}
 
       <h2>Your questions</h2>
+      <p>
+        <Link href="/questions/import/">Import questions from a PDF</Link>
+      </p>
       {questions === null && !error && <p role="status">Loading…</p>}
       {questions?.length === 0 && <p>You haven&apos;t added any questions yet.</p>}
+      {questions !== null && questions.length > 0 && (
+        <div className={styles.filters}>
+          <label>
+            Search
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
+            />
+          </label>
+          <label>
+            Filter by category
+            <select
+              value={categoryFilter}
+              onChange={(event) => {
+                setCategoryFilter(event.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
+            >
+              <option value="">All categories</option>
+              {CATEGORIES.map((category) => (
+                <option key={category} value={category}>
+                  {CATEGORY_LABELS[category]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Filter by source
+            <select
+              value={sourceFilter}
+              onChange={(event) => {
+                setSourceFilter(event.target.value);
+                setVisibleCount(PAGE_SIZE);
+              }}
+            >
+              <option value="">All sources</option>
+              <option value="manual">Added by you</option>
+              <option value="pdf_import">Imported</option>
+            </select>
+          </label>
+          <p role="status">
+            Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
+          </p>
+        </div>
+      )}
+      {questions !== null && questions.length > 0 && filtered.length === 0 && <p>No questions match these filters.</p>}
       <ul className={styles.list}>
-        {questions?.map((question) => (
+        {filtered.slice(0, visibleCount).map((question) => (
           <li key={question.id}>
             <p>{question.questionText}</p>
             {question.description && <p className={styles.meta}>{question.description}</p>}
+            {question.followUpQuestions.length > 0 && (
+              <ul>
+                {question.followUpQuestions.map((prompt) => (
+                  <li key={prompt} className={styles.followUp}>
+                    {prompt}
+                  </li>
+                ))}
+              </ul>
+            )}
             <p className={styles.meta}>
-              {[capitalize(question.category), capitalize(question.difficulty), ...question.topics].join(" · ")}
+              {[
+                CATEGORY_LABELS[question.category],
+                capitalize(question.difficulty),
+                ...(question.source === "pdf_import" ? ["Imported"] : []),
+                ...question.topics,
+              ].join(" · ")}
             </p>
             <div className={styles.actions}>
               <button type="button" onClick={() => startEditing(question)}>
@@ -188,6 +294,11 @@ export function QuestionManager({ user }: { user: User }) {
           </li>
         ))}
       </ul>
+      {visibleCount < filtered.length && (
+        <button type="button" onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}>
+          Show more
+        </button>
+      )}
     </>
   );
 }

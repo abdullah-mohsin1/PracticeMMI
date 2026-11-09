@@ -5,7 +5,7 @@ import { extname, join, normalize } from "node:path";
 
 const BASE = "/PracticeMMI";
 const ROOT = join(process.cwd(), "out");
-const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".txt": "text/plain" };
+const TYPES = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".css": "text/css", ".txt": "text/plain" };
 
 createServer((request, response) => {
   const pathname = decodeURIComponent(new URL(request.url, "http://localhost").pathname);

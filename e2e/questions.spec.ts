@@ -28,7 +28,7 @@ test("a signed-in person can create, read, edit and delete questions that persis
   await page.getByLabel("Category").selectOption("policy");
   await page.getByLabel("Topics (comma separated)").fill("donation, consent");
   await page.getByRole("button", { name: "Add question" }).click();
-  await expect(question(page, "Should organ donation be opt-out?")).toContainText("Policy · Medium · donation · consent");
+  await expect(question(page, "Should organ donation be opt-out?")).toContainText("Healthcare and societal issues · Medium · donation · consent");
 
   await page.reload();
   await expect(question(page, "Should organ donation be opt-out?")).toBeVisible();

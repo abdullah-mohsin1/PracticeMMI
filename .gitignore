@@ -17,3 +17,6 @@ playwright-report/
 
 .firebase/
 *-debug.log
+
+# Question banks can be copyrighted and must stay out of this public repository.
+*.pdf
