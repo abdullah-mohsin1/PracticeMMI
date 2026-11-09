@@ -17,11 +17,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <Link href="/" className="brand">
             PracticeMMI
           </Link>
-          <Link href="/practice/setup" className="btn btn-primary btn-small">
-            Start practice
-          </Link>
+          <nav className="row">
+            <Link href="/questions/">Your questions</Link>
+            <Link href="/practice/setup" className="btn btn-primary btn-small">
+              Start practice
+            </Link>
+          </nav>
         </header>
-        <main className="page">{children}</main>
+        <div className="page">{children}</div>
       </body>
     </html>
   );

@@ -80,6 +80,10 @@ a {
   display: none;
 }
 
+.auth-area:has(.live-session) > p {
+  display: none;
+}
+
 .brand {
   color: var(--text);
   font-weight: 650;
@@ -231,6 +235,7 @@ a {
 input[type="text"],
 input[type="number"],
 input[type="search"],
+select,
 textarea {
   width: 100%;
   padding: 0.5rem 0.65rem;

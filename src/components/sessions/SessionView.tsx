@@ -221,7 +221,7 @@ function Review({ data }: { data: LoadedSession }) {
       <div className="spread">
         <div className="stack-tight">
           <p className="hint">
-            <Link href="/">Your questions</Link>
+            <Link href="/">Back to dashboard</Link>
           </p>
           <h1>Review your practice</h1>
         </div>

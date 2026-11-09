@@ -9,3 +9,9 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
+
+.firebase/
+*-debug.log
+
+# Question banks can be copyrighted and must stay out of this public repository.
+*.pdf

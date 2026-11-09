@@ -1,9 +1,8 @@
 // The boundary between the interface and Terminal 1's Firebase work.
 //
-// The interface only talks to these two interfaces. Terminal 1 implements them
-// on Firebase Auth and Firestore and passes them to configureServices() in
-// src/lib/services.ts. tests/unit/question-repository-contract.ts is the
-// behaviour any implementation has to satisfy.
+// The simulator only talks to these two interfaces. src/lib/firebase-services.ts
+// implements them on the Firebase sign-in and question storage.
+// tests/unit/question-repository-contract.ts is the behaviour they must have.
 //
 // Recordings and transcripts are deliberately not part of this boundary. They
 // stay in the browser (see src/lib/storage/sessions.ts).
@@ -29,10 +28,10 @@ export interface Question {
   text: string;
   category: string | null;
   notes: string | null;
-  /** ISO 8601. */
-  createdAt: string;
-  /** ISO 8601. */
-  updatedAt: string;
+  /** ISO 8601, or null when the store doesn't report it. */
+  createdAt: string | null;
+  /** ISO 8601, or null when the store doesn't report it. */
+  updatedAt: string | null;
 }
 
 export interface QuestionInput {
@@ -54,7 +53,7 @@ export class RepositoryError extends Error {
   }
 }
 
-export const QUESTION_TEXT_LIMIT = 1000;
+export const QUESTION_TEXT_LIMIT = 2000;
 export const QUESTION_NOTES_LIMIT = 2000;
 export const QUESTION_CATEGORY_LIMIT = 60;
 

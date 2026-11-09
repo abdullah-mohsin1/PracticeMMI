@@ -3,13 +3,13 @@ import { createLocalServices } from "@/lib/storage/local-services";
 
 let services: AppServices | null = null;
 
-/** Until Firebase is connected, the bank lives in this browser under a local profile. */
+/** Pages configure Firebase through SignedIn. The local store is only a fallback for tests. */
 export function getServices(): AppServices {
   services ??= createLocalServices();
   return services;
 }
 
-/** Terminal 1 calls this once at start-up with the Firebase implementations. */
+/** Called once someone has signed in. */
 export function configureServices(next: AppServices): void {
   services = next;
 }

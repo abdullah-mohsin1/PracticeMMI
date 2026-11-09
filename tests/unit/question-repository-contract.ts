@@ -3,7 +3,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { RepositoryError, type QuestionRepository } from "@/lib/contracts";
 
-const input = { text: "  Why medicine?  ", category: " Motivation ", notes: "" };
+const input = { text: "  Why medicine?  ", category: "ethical", notes: "" };
 
 export function describeQuestionRepository(name: string, create: (owner: string) => QuestionRepository | Promise<QuestionRepository>) {
   describe(`QuestionRepository: ${name}`, () => {
@@ -13,7 +13,7 @@ export function describeQuestionRepository(name: string, create: (owner: string)
     });
 
     it("creates a trimmed question", async () => {
-      expect(await repository.create(input)).toMatchObject({ text: "Why medicine?", category: "Motivation", notes: null, ownerId: "owner-a" });
+      expect(await repository.create(input)).toMatchObject({ text: "Why medicine?", category: "ethical", notes: null, ownerId: "owner-a" });
     });
 
     it("lists newest first", async () => {
@@ -25,8 +25,8 @@ export function describeQuestionRepository(name: string, create: (owner: string)
 
     it("updates a question", async () => {
       const created = await repository.create(input);
-      const updated = await repository.update(created.id, { text: "Changed", category: null, notes: "N" });
-      expect(updated).toMatchObject({ id: created.id, text: "Changed", category: null, notes: "N", createdAt: created.createdAt });
+      const updated = await repository.update(created.id, { text: "Changed", category: "policy", notes: "N" });
+      expect(updated).toMatchObject({ id: created.id, text: "Changed", category: "policy", notes: "N", createdAt: created.createdAt });
       expect((await repository.list())[0]?.text).toBe("Changed");
     });
 

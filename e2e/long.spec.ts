@@ -2,7 +2,7 @@
 // See playwright.config.ts for what REAL_SPEECH=1 does.
 import { execFileSync } from "node:child_process";
 import { expect, test, type Page } from "@playwright/test";
-import { addOneOff, continueAndCheckDevices, fakeSpeech, playerFacts, setTime, waitForReview } from "./helpers";
+import { addOneOff, continueAndCheckDevices, fakeSpeech, playerFacts, setTime, signInAndOpen, waitForReview } from "./helpers";
 
 const realSpeech = process.env.REAL_SPEECH === "1";
 
@@ -53,7 +53,7 @@ test("a full six-minute response records and transcribes", async ({ page }) => {
   page.on("pageerror", (error) => seenErrors.push(error.message));
   if (!realSpeech) await chromeLikeSpeech(page);
 
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 2);
   await addOneOff(page, "Why do you want to be a physician?");
   await continueAndCheckDevices(page);
@@ -122,7 +122,7 @@ test("a full six-minute response records and transcribes", async ({ page }) => {
 
 test("a full mock runs eight stations with the two-minute break after station four", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await page.getByRole("radio", { name: /Full mock/ }).check();
   await setTime(page, "Preparation time", 0, 1);
   await setTime(page, "Speaking time", 0, 10);

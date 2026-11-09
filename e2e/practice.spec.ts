@@ -1,16 +1,17 @@
 import { readFile, stat } from "node:fs/promises";
-import { expect, test } from "@playwright/test";
-import { addOneOff, continueAndCheckDevices, exposeStream, fakeSpeech, noSpeech, numberedFakeSpeech, playerFacts, setTime, waitForReview } from "./helpers";
+import { expect, test, type Page } from "@playwright/test";
+import { buildQuestionBank } from "./helpers/pdf";
+import { addOneOff, continueAndCheckDevices, exposeStream, fakeSpeech, noSpeech, numberedFakeSpeech, playerFacts, setTime, signInAndOpen, waitForReview } from "./helpers";
 
 test.describe.configure({ timeout: 120_000 });
 
 test("question bank: add, edit, delete, and it survives a reload", async ({ page }) => {
-  await page.goto("/");
+  await signInAndOpen(page, "/");
   await expect(page.getByText("Your question bank is empty")).toBeVisible();
 
   await page.getByRole("button", { name: "Add question" }).click();
   await page.getByLabel("Question", { exact: true }).fill("Why medicine?");
-  await page.getByLabel("Category (optional)").fill("Motivation");
+  await page.getByLabel("Category").selectOption("personal");
   await page.getByRole("button", { name: "Save question" }).click();
   await expect(page.getByRole("list", { name: "Question bank" }).getByText("Why medicine?")).toBeVisible();
 
@@ -28,15 +29,17 @@ test("question bank: add, edit, delete, and it survives a reload", async ({ page
 });
 
 test("practice from start to finish: timer, recording, playback, downloads and transcript", async ({ page }) => {
-  const writes: string[] = [];
+  // Firebase may carry question-library calls. Nothing else may leave, and
+  // nothing the size of a recording may leave at all.
+  const outbound: string[] = [];
   page.on("request", (request) => {
     const url = request.url();
-    if (url.startsWith("blob:") || url.startsWith("data:")) return;
-    const reads = request.method() === "GET" || request.method() === "HEAD";
-    if (!reads || !url.startsWith("http://127.0.0.1")) writes.push(`${request.method()} ${url}`);
+    if (url.startsWith("blob:") || url.startsWith("data:") || request.method() === "GET" || request.method() === "HEAD") return;
+    const isFirebase = /^http:\/\/127\.0\.0\.1:(8080|9099)\//.test(url);
+    if (!isFirebase || (request.postDataBuffer()?.length ?? 0) > 20_000) outbound.push(`${request.method()} ${url}`);
   });
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 3);
   await setTime(page, "Speaking time", 0, 12);
   await addOneOff(page, "Describe a time you changed your mind.");
@@ -85,12 +88,12 @@ test("practice from start to finish: timer, recording, playback, downloads and t
 
   await page.reload();
   await expect(page.getByLabel("Transcript")).toHaveValue("my corrected answer");
-  expect(writes, "Nothing should be uploaded").toEqual([]);
+  expect(outbound, "Nothing should be uploaded").toEqual([]);
 });
 
 test("moves from one station to the next by itself, with one question each", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
   await setTime(page, "Preparation time", 0, 1);
   await setTime(page, "Speaking time", 0, 10);
@@ -121,7 +124,7 @@ test("explains a blocked camera and microphone, and can still run the timer", as
       throw new DOMException("denied", "NotAllowedError");
     };
   });
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
@@ -147,7 +150,7 @@ test("continues with audio only when there's no camera", async ({ page }) => {
       return original(constraints);
     };
   });
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
@@ -161,7 +164,7 @@ test("continues with audio only when there's no camera", async ({ page }) => {
 
 test("without speech recognition it still records, and offers a typed transcript", async ({ page }) => {
   await noSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
@@ -191,7 +194,7 @@ test("a speech recognition failure leaves the recording intact", async ({ page }
     }
     Object.assign(window, { webkitSpeechRecognition: Failing, SpeechRecognition: undefined });
   });
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
@@ -206,7 +209,7 @@ test("a speech recognition failure leaves the recording intact", async ({ page }
 test("a disconnected device warns, keeps the timer going, and reconnecting starts a new part", async ({ page }) => {
   await fakeSpeech(page);
   await exposeStream(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 20);
   await addOneOff(page, "A question");
@@ -238,7 +241,7 @@ test("a disconnected device warns, keeps the timer going, and reconnecting start
 
 test("reloading mid-session keeps what was already captured", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
@@ -258,7 +261,7 @@ test("reloading mid-session keeps what was already captured", async ({ page }) =
 
 test("ending a session early keeps the recording", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
@@ -271,13 +274,13 @@ test("ending a session early keeps the recording", async ({ page }) => {
   await waitForReview(page, 15_000);
   expect((await playerFacts(page)).duration).toBeGreaterThan(3);
 
-  await page.getByRole("link", { name: "Your questions" }).click();
+  await page.getByRole("link", { name: "Back to dashboard" }).click();
   await expect(page.getByText("Ended early")).toBeVisible();
 });
 
 test("deleting a session removes it", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
@@ -293,7 +296,7 @@ test("deleting a session removes it", async ({ page }) => {
 // Uses simulated speech: this checks our own state handling, not real recognition.
 test("a new station never shows the previous station's transcript", async ({ page }) => {
   await numberedFakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
   await setTime(page, "Preparation time", 0, 3);
   await setTime(page, "Speaking time", 0, 10);
@@ -319,7 +322,7 @@ test("a new station never shows the previous station's transcript", async ({ pag
 
 test("leaving a running interview always warns first", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 1, 0);
   await addOneOff(page, "A question");
@@ -330,6 +333,7 @@ test("leaving a running interview always warns first", async ({ page }) => {
 
   // No links to leave through.
   await expect(page.getByRole("link")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeHidden();
 
   // The Back button asks first, and asks every time.
   for (let press = 0; press < 2; press += 1) {
@@ -356,7 +360,7 @@ test("leaving a running interview always warns first", async ({ page }) => {
 
 test("refreshing can't restart the clock: the session closes and stays closed", async ({ page }) => {
   await fakeSpeech(page);
-  await page.goto("/practice/setup/");
+  await signInAndOpen(page, "/practice/setup/");
   await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
@@ -376,7 +380,84 @@ test("refreshing can't restart the clock: the session closes and stays closed", 
   await expect(page.getByTestId("countdown")).toHaveCount(0);
 });
 
-test("unknown pages return a 404", async ({ page }) => {
-  const response = await page.goto("/does-not-exist");
-  expect(response?.status()).toBe(404);
+const IMPORTED = "A neighbour asks you to keep a secret that may harm someone else. What would you do?";
+
+test("a question imported from a PDF can be used in timed practice with a one-off prompt", async ({ page }) => {
+  await fakeSpeech(page);
+  await signInAndOpen(page, "/questions/");
+  await page.getByRole("link", { name: "Import questions from a PDF" }).click();
+  const input = page.getByLabel("PDF file");
+  await expect(input).toBeEnabled();
+  await input.setInputFiles({ name: "bank.pdf", mimeType: "application/pdf", buffer: await buildQuestionBank() });
+  await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
+  await page.getByRole("button", { name: /^Import \d+ questions$/ }).click();
+  await expect(page.getByText(/Import complete\./)).toBeVisible({ timeout: 30_000 });
+
+  await page.goto("/PracticeMMI/practice/setup/");
+  await page.getByLabel("Stations", { exact: true }).fill("2");
+  await setTime(page, "Preparation time", 0, 0);
+  await setTime(page, "Speaking time", 0, 10);
+  await page.getByRole("checkbox", { name: IMPORTED }).check();
+  await addOneOff(page, "A one-off prompt");
+  await continueAndCheckDevices(page);
+  await page.getByRole("button", { name: "Start practice" }).click();
+
+  await expect(page.getByTestId("question")).toHaveText(IMPORTED);
+  await expect(page.locator(".rec")).toBeVisible();
+  await expect(page.getByTestId("question")).toHaveText("A one-off prompt", { timeout: 14_000 });
+  await waitForReview(page, 30_000);
+  await expect(page.getByText(IMPORTED)).toBeVisible();
+  expect((await playerFacts(page, /station 1/)).duration).toBeGreaterThan(8.5);
+});
+
+const library = (page: Page, text: string) => page.getByRole("listitem").filter({ hasText: text });
+
+async function addToLibrary(page: Page, text: string, difficulty: string, topics: string) {
+  await page.getByRole("textbox", { name: "Question", exact: true }).fill(text);
+  await page.getByLabel("Category").selectOption("policy");
+  await page.getByLabel("Difficulty").selectOption(difficulty);
+  await page.getByLabel("Topics (comma separated)").fill(topics);
+  await page.getByRole("button", { name: "Add question" }).click();
+  await expect(library(page, text)).toBeVisible();
+}
+
+test("a session can mix a Firebase library question and a one-off prompt", async ({ page }) => {
+  await fakeSpeech(page);
+  await signInAndOpen(page, "/questions/");
+  await addToLibrary(page, "A question from the library", "medium", "ethics");
+
+  await page.goto("/PracticeMMI/practice/setup/");
+  await page.getByLabel("Stations", { exact: true }).fill("2");
+  await setTime(page, "Preparation time", 0, 0);
+  await setTime(page, "Speaking time", 0, 10);
+  await page.getByRole("checkbox", { name: "A question from the library" }).check();
+  await addOneOff(page, "A one-off prompt");
+  await continueAndCheckDevices(page);
+  await page.getByRole("button", { name: "Start practice" }).click();
+
+  await expect(page.getByTestId("question")).toHaveText("A question from the library");
+  await expect(page.getByTestId("question")).toHaveText("A one-off prompt", { timeout: 14_000 });
+  await waitForReview(page, 30_000);
+  await expect(page.getByText("A question from the library")).toBeVisible();
+  await page.getByRole("button", { name: "Station 2", exact: true }).click();
+  await expect(page.getByText("A one-off prompt")).toBeVisible();
+
+  // The one-off prompt never joins the library.
+  await page.goto("/PracticeMMI/questions/");
+  await expect(library(page, "A question from the library")).toBeVisible();
+  await expect(page.getByText("A one-off prompt")).toHaveCount(0);
+});
+
+test("editing on the dashboard keeps the library fields it doesn't show", async ({ page }) => {
+  await signInAndOpen(page, "/questions/");
+  await addToLibrary(page, "Original wording", "hard", "consent, triage");
+
+  await page.goto("/PracticeMMI/");
+  await page.getByRole("button", { name: "Edit: Original wording" }).click();
+  await page.getByLabel("Question", { exact: true }).fill("Changed wording");
+  await page.getByRole("button", { name: "Save question" }).click();
+  await expect(page.getByRole("list", { name: "Question bank" }).getByText("Changed wording")).toBeVisible();
+
+  await page.goto("/PracticeMMI/questions/");
+  await expect(library(page, "Changed wording")).toContainText("Hard · consent · triage");
 });

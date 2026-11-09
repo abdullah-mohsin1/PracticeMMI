@@ -1,18 +1,21 @@
 import { defineConfig, devices } from "@playwright/test";
 
-const port = 8788;
+const port = 4173;
 const fakeMedia = ["--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream"];
 
-// Tests run against the static export, served the way a static host serves it.
+// Runs against the real static export, with Firebase replaced by its local emulators.
 export default defineConfig({
   testDir: "e2e",
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  use: { baseURL: `http://127.0.0.1:${port}`, acceptDownloads: true },
+  use: { baseURL: `http://127.0.0.1:${port}`, trace: "retain-on-failure", acceptDownloads: true },
   projects: [
+    { name: "library", testMatch: /(smoke|questions|import)\.spec/, use: { ...devices["Desktop Chrome"] } },
     {
-      name: "chromium",
-      testIgnore: /long\.spec/,
+      // Full Chromium: the headless shell hangs on or crashes with fake devices.
+      name: "simulator",
+      testMatch: /practice\.spec/,
       use: { ...devices["Desktop Chrome"], channel: "chromium", launchOptions: { args: fakeMedia } },
     },
     {
@@ -23,16 +26,12 @@ export default defineConfig({
       name: "chrome-long",
       testMatch: /long\.spec/,
       timeout: 15 * 60_000,
-      use: {
-        ...devices["Desktop Chrome"],
-        channel: "chrome",
-        launchOptions: { args: fakeMedia },
-      },
+      use: { ...devices["Desktop Chrome"], channel: "chrome", launchOptions: { args: fakeMedia } },
     },
   ],
   webServer: {
-    command: `PORT=${port} node scripts/serve-static.mjs`,
-    url: `http://127.0.0.1:${port}/`,
+    command: "node scripts/serve-static.mjs",
+    url: `http://127.0.0.1:${port}/PracticeMMI/`,
     reuseExistingServer: !process.env.CI,
   },
 });

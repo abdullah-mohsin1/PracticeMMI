@@ -43,7 +43,7 @@ export function createLocalQuestionRepository(ownerId: string): QuestionReposito
     list: () =>
       guarded(async () => {
         const rows = await getByIndex<Question>("questions", "ownerId", ownerId);
-        return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        return rows.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
       }),
     create: (input: QuestionInput) =>
       guarded(async () => {

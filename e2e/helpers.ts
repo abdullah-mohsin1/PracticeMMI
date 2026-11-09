@@ -71,6 +71,26 @@ export async function exposeStream(page: Page) {
   });
 }
 
+let accounts = 0;
+
+/** Signs a brand-new account in through the emulator, then opens a page. */
+export async function signInAndOpen(page: Page, path: string) {
+  accounts += 1;
+  const email = `student-${Date.now()}-${accounts}@example.test`;
+  await page.goto("/PracticeMMI/");
+  const popupPromise = page.waitForEvent("popup");
+  await page.getByRole("button", { name: "Sign in with Google" }).click();
+  const popup = await popupPromise;
+  await popup.waitForLoadState();
+  await popup.getByRole("button", { name: /add new account/i }).click();
+  await popup.locator("#email-input").fill(email);
+  await popup.locator("#display-name-input").fill(email.split("@")[0]!);
+  await popup.getByRole("button", { name: /sign in/i }).click();
+  await expect(page.getByText(`Signed in as ${email}.`)).toBeVisible();
+  await page.goto(`/PracticeMMI${path}`);
+  await expect(page.getByText(`Signed in as ${email}.`)).toBeVisible();
+}
+
 export async function setTime(page: Page, label: string, minutes: number, seconds: number) {
   await page.getByLabel(`${label} minutes`).fill(String(minutes));
   await page.getByLabel(`${label} seconds`).fill(String(seconds));

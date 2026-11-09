@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { QUESTION_TEXT_LIMIT, RepositoryError, type Question, type QuestionInput } from "@/lib/contracts";
+import { CATEGORIES } from "@/lib/questions/schema";
+
+const categoryLabel = (value: string) => value[0]!.toUpperCase() + value.slice(1).replaceAll("_", " ");
 
 interface QuestionEditorProps {
   /** Null adds a new question. */
@@ -13,7 +16,7 @@ interface QuestionEditorProps {
 export function QuestionEditor({ question, onSave, onClose }: QuestionEditorProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [text, setText] = useState(question?.text ?? "");
-  const [category, setCategory] = useState(question?.category ?? "");
+  const [category, setCategory] = useState<string>(question?.category ?? CATEGORIES[0]);
   const [notes, setNotes] = useState(question?.notes ?? "");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -32,7 +35,7 @@ export function QuestionEditor({ question, onSave, onClose }: QuestionEditorProp
     setSaving(true);
     setError(null);
     try {
-      await onSave({ text, category: category || null, notes: notes || null });
+      await onSave({ text, category, notes: notes || null });
     } catch (caught) {
       setSaving(false);
       setError(
@@ -67,8 +70,14 @@ export function QuestionEditor({ question, onSave, onClose }: QuestionEditorProp
           />
         </div>
         <div className="field">
-          <label htmlFor="question-category">Category (optional)</label>
-          <input id="question-category" type="text" maxLength={60} value={category} onChange={(event) => setCategory(event.target.value)} />
+          <label htmlFor="question-category">Category</label>
+          <select id="question-category" value={category} onChange={(event) => setCategory(event.target.value)}>
+            {CATEGORIES.map((option) => (
+              <option key={option} value={option}>
+                {categoryLabel(option)}
+              </option>
+            ))}
+          </select>
         </div>
         <div className="field">
           <label htmlFor="question-notes">Notes (optional)</label>
