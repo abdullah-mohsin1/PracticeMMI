@@ -1,0 +1,27 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function isValidQuestion() {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['category', 'questionText', 'description', 'difficulty', 'topics', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['category', 'questionText', 'description', 'difficulty', 'topics', 'createdAt', 'updatedAt'])
+        && data.category in ['ethical', 'personal', 'policy']
+        && data.difficulty in ['easy', 'medium', 'hard']
+        && data.questionText is string && data.questionText.size() >= 1 && data.questionText.size() <= 2000
+        && data.description is string && data.description.size() <= 2000
+        && data.topics is list && data.topics.size() <= 10
+        && data.updatedAt == request.time;
+    }
+
+    match /users/{uid}/questions/{questionId} {
+      allow get, list, delete: if isOwner(uid);
+      allow create: if isOwner(uid) && isValidQuestion() && request.resource.data.createdAt == request.time;
+      allow update: if isOwner(uid) && isValidQuestion() && request.resource.data.createdAt == resource.data.createdAt;
+    }
+  }
+}

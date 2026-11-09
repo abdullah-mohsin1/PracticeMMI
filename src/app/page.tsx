@@ -1,8 +1,13 @@
+import Link from "next/link";
+
 export default function HomePage() {
   return (
     <main>
       <h1>PracticeMMI</h1>
-      <p>Multiple Mini Interview practice for Canadian medical school applicants. Coming soon.</p>
+      <p>Private Multiple Mini Interview practice.</p>
+      <p>
+        <Link href="/questions/">Your questions</Link>
+      </p>
     </main>
   );
 }

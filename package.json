@@ -8,27 +8,27 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
-    "preview": "npm run build:worker && wrangler dev --port 8788",
-    "deploy:staging": "opennextjs-cloudflare build --env staging && opennextjs-cloudflare deploy --env staging",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "npm run build:worker && playwright test"
+    "test:rules": "npx --yes firebase-tools@15.35.0 emulators:exec --only firestore --project demo-practicemmi \"vitest run --config vitest.rules.config.mts\"",
+    "test:e2e": "NEXT_PUBLIC_BASE_PATH=/PracticeMMI NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true NEXT_PUBLIC_FIREBASE_API_KEY=demo-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-practicemmi.firebaseapp.com NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-practicemmi NEXT_PUBLIC_FIREBASE_APP_ID=demo-app next build && npx --yes firebase-tools@15.35.0 emulators:exec --only auth,firestore --project demo-practicemmi \"playwright test\"",
+    "emulators": "npx --yes firebase-tools@15.35.0 emulators:start --only auth,firestore --project demo-practicemmi",
+    "deploy:rules": "npx --yes firebase-tools@15.35.0 deploy --only firestore:rules"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "1.20.16",
+    "firebase": "13.2.0",
     "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zod": "4.6.7"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "6.0.0",
     "@playwright/test": "1.65.0",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "typescript": "7.0.2",
-    "vitest": "5.1.0",
-    "wrangler": "4.158.0"
+    "vitest": "5.1.0"
   }
 }
