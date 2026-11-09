@@ -1,0 +1,2 @@
+# Copy to .dev.vars for local development. Never commit real values.
+HEALTH_CHECK_SECRET=any-local-value
