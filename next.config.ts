@@ -1,9 +1,10 @@
-import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 import type { NextConfig } from "next";
 
-// cacheComponents and partialPrefetching stay off: see D-006 in DECISIONS.md.
-const nextConfig: NextConfig = {};
+// A fully static site: `next build` writes plain files to out/. Pages must not
+// use route handlers, server actions or per-request rendering.
+const nextConfig: NextConfig = {
+  output: "export",
+  trailingSlash: true,
+};
 
 export default nextConfig;
-
-initOpenNextCloudflareForDev();
