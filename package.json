@@ -11,9 +11,10 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:rules": "npx --yes firebase-tools@15.35.0 emulators:exec --only firestore --project demo-practicemmi \"vitest run --config vitest.rules.config.mts\"",
-    "test:e2e": "NEXT_PUBLIC_BASE_PATH=/PracticeMMI NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true NEXT_PUBLIC_IMPORT_COMMIT_TIMEOUT_MS=1500 NEXT_PUBLIC_FIREBASE_API_KEY=demo-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-practicemmi.firebaseapp.com NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-practicemmi NEXT_PUBLIC_FIREBASE_APP_ID=demo-app next build && npx --yes firebase-tools@15.35.0 emulators:exec --only auth,firestore --project demo-practicemmi \"playwright test\"",
+    "test:e2e": "NEXT_PUBLIC_BASE_PATH=/PracticeMMI NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true NEXT_PUBLIC_IMPORT_COMMIT_TIMEOUT_MS=1500 NEXT_PUBLIC_FIREBASE_API_KEY=demo-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-practicemmi.firebaseapp.com NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-practicemmi NEXT_PUBLIC_FIREBASE_APP_ID=demo-app next build && npx --yes firebase-tools@15.35.0 emulators:exec --only auth,firestore --project demo-practicemmi \"playwright test --project=library --project=simulator\"",
     "emulators": "npx --yes firebase-tools@15.35.0 emulators:start --only auth,firestore --project demo-practicemmi",
-    "deploy:rules": "npx --yes firebase-tools@15.35.0 deploy --only firestore:rules"
+    "deploy:rules": "npx --yes firebase-tools@15.35.0 deploy --only firestore:rules",
+    "test:e2e:long": "NEXT_PUBLIC_BASE_PATH=/PracticeMMI NEXT_PUBLIC_FIREBASE_USE_EMULATORS=true NEXT_PUBLIC_IMPORT_COMMIT_TIMEOUT_MS=1500 NEXT_PUBLIC_FIREBASE_API_KEY=demo-key NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=demo-practicemmi.firebaseapp.com NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-practicemmi NEXT_PUBLIC_FIREBASE_APP_ID=demo-app next build && npx --yes firebase-tools@15.35.0 emulators:exec --only auth,firestore --project demo-practicemmi \"playwright test --project=chrome-long\""
   },
   "dependencies": {
     "firebase": "13.2.0",
@@ -26,9 +27,13 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
     "@playwright/test": "1.65.0",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "fake-indexeddb": "6.2.8",
+    "jsdom": "31.0.0",
     "pdf-lib": "1.17.1",
     "typescript": "7.0.2",
     "vitest": "5.1.0"

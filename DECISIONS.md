@@ -159,6 +159,17 @@ Quotas reserve one evaluation per session, so retries and duplicates do not cons
 ### D-023: Serve budget limits from the database — *Proposed*
 A single `app_settings` row holds the pause switch, monthly AI budget and per-user limits, checked before each OpenAI call. Changing a limit needs no deployment. Transcription is about 98% of the estimated AI cost per mock, so the limits are built around audio minutes as well as evaluations.
 
+## Scope change, November 9, 2026
+
+### D-028: Build a static, browser-only practice tool for 2–3 friends — *Owner direction*
+The project owner finalized a smaller scope: a static-compatible Next.js app with no backend, no AI providers and no AI feedback. Recordings stay in the browser. Firebase, owned by Terminal 1, replaces Neon and Cognito for the question bank and sign-in. This supersedes the Cloudflare Workers, OpenNext, Neon, Cognito, R2 and AI decisions above for this branch. `PROJECT_SPEC.md`, `ARCHITECTURE.md` and the other planning documents still describe the old product, and need the owner's decision on whether to rewrite or retire them.
+
+### D-029: Store recordings as chunks in IndexedDB — *Accepted*
+Each station's MediaRecorder writes a chunk to IndexedDB every two seconds, so a crash loses seconds and not an answer. Requesting a keyframe every two seconds is required, because Chrome's MP4 writer otherwise held back all data (a 9-second recording left a 1,243-byte file). MP4 is preferred where the browser can write it, because QuickTime can open it. WebM is the fallback.
+
+### D-030: Treat browser speech recognition as best-effort — *Accepted*
+Timing and recording never depend on it. The device check says that Chrome, Edge and Safari can send microphone audio to Google or Apple, and offers an off switch, because this is the one path by which audio can leave the browser. On-device recognition is used when the browser already has it.
+
 ## Open items
 
 | ID | Decision | Needed by |
