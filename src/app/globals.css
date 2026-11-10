@@ -605,6 +605,15 @@ textarea {
   background: var(--navy-soft);
 }
 
+.pick-text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .queue-item {
   display: flex;
   flex-wrap: wrap;

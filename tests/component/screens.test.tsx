@@ -139,6 +139,14 @@ describe("Dashboard", () => {
 });
 
 describe("PracticeSetup", () => {
+  it("shows each bank question's category", async () => {
+    const repository = useRepository(["Should doctors strike?"]);
+    repository.rows[0]!.category = "policy";
+    render(<PracticeSetup />);
+    const label = (await screen.findByText("Should doctors strike?")).closest("label")!;
+    expect(within(label).getByText("Policy")).toBeTruthy();
+  });
+
   const continueButton = () => screen.getByRole("button", { name: "Continue to device check" }) as HTMLButtonElement;
 
   it("defaults to 8 minutes of speaking with no preparation time", async () => {
