@@ -140,49 +140,75 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
     }
   };
 
+  const status =
+    needed > 0
+      ? `Add ${needed} more question${needed === 1 ? "" : "s"}.`
+      : needed < 0
+        ? `Remove ${-needed} question${needed === -1 ? "" : "s"}.`
+        : Object.keys(errors).length === 0
+          ? `Total time: ${formatDuration(totalSeconds(config))}`
+          : "";
+
   return (
     <div className="stack">
-      <h1>Set up practice</h1>
-
-      <div className="mode-options" role="radiogroup" aria-label="Practice type">
-        <label className="mode-option">
-          <input type="radio" name="mode" checked={mode === "custom"} onChange={() => setMode("custom")} />
-          <span>
-            <strong>Custom</strong>
-            <br />
-            <span className="hint">Choose how many stations you want</span>
-          </span>
-        </label>
-        <label className="mode-option">
-          <input type="radio" name="mode" checked={mode === "mock"} onChange={() => setMode("mock")} />
-          <span>
-            <strong>Full mock</strong>
-            <br />
-            <span className="hint">{MOCK_STATIONS} stations, with a 2-minute break after station 4</span>
-          </span>
-        </label>
+      <div className="page-head">
+        <h1>Set up practice</h1>
+        <p className="lead">Choose a format, then pick one question for each station. Each station is one timed answer, recorded on this device.</p>
       </div>
 
-      <div className="settings-grid">
-        {mode === "custom" ? (
-          <div className="field">
-            <label htmlFor="station-count">Stations</label>
-            <input id="station-count" type="number" min={1} max={12} value={stationCount} onChange={(event) => setStationCount(Math.floor(Number(event.target.value) || 0))} />
-            {errors.stationCount ? (
-              <p className="field-error" role="alert">
-                {errors.stationCount}
-              </p>
-            ) : null}
+      <section className="panel" aria-labelledby="format-heading">
+        <div className="panel-head">
+          <h2 id="format-heading">Choose a format</h2>
+          <p className="hint">Practise a few stations, or run a full mock interview.</p>
+        </div>
+        <div className="mode-options" role="radiogroup" aria-label="Practice type">
+          <label className="mode-option">
+            <input type="radio" name="mode" checked={mode === "custom"} onChange={() => setMode("custom")} />
+            <span>
+              <strong>Custom</strong>
+              <br />
+              <span className="hint">Choose how many stations you want</span>
+            </span>
+          </label>
+          <label className="mode-option">
+            <input type="radio" name="mode" checked={mode === "mock"} onChange={() => setMode("mock")} />
+            <span>
+              <strong>Full mock</strong>
+              <br />
+              <span className="hint">{MOCK_STATIONS} stations, with a 2-minute break after station 4</span>
+            </span>
+          </label>
+        </div>
+        <div className="settings-grid">
+          {mode === "custom" ? (
+            <div className="field">
+              <label htmlFor="station-count">Stations</label>
+              <input id="station-count" type="number" min={1} max={12} value={stationCount} onChange={(event) => setStationCount(Math.floor(Number(event.target.value) || 0))} />
+              {errors.stationCount ? (
+                <p className="field-error" role="alert">
+                  {errors.stationCount}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
+          <TimeField id="speak" label="Speaking time" seconds={speakSeconds} error={errors.speakSeconds} onChange={setSpeakSeconds} />
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="questions-heading">
+        <div className="spread">
+          <div className="panel-head">
+            <h2 id="questions-heading">Add your questions</h2>
+            <p className="hint">Type a new question, or tick questions from your bank.</p>
           </div>
-        ) : null}
-        <TimeField id="speak" label="Speaking time" seconds={speakSeconds} error={errors.speakSeconds} onChange={setSpeakSeconds} />
-      </div>
+          <span className="count-pill" data-complete={needed === 0}>
+            {queue.length} of {config.stationCount} added
+          </span>
+        </div>
 
-      <section className="stack-tight">
-        <h2>Type a one-off question</h2>
-        <div className="field">
-          <label className="sr-only" htmlFor="one-off">
-            One-off question
+        <div className="stack-tight">
+          <label htmlFor="one-off">
+            <strong>One-off question</strong>
           </label>
           <textarea id="one-off" rows={2} maxLength={QUESTION_TEXT_LIMIT} value={oneOff} onChange={(event) => setOneOff(event.target.value)} placeholder="Used for this session only. It won't be saved to your bank." />
           {oneOffError ? (
@@ -190,45 +216,51 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
               {oneOffError}
             </p>
           ) : null}
-        </div>
-        <div>
-          <button type="button" className="btn btn-secondary btn-small" onClick={addOneOff}>
-            Add to this session
-          </button>
-        </div>
-      </section>
-
-      {bank.length > 0 ? (
-        <section className="stack-tight">
-          <div className="spread">
-            <h2>Choose from your bank</h2>
-            <button type="button" className="btn btn-quiet btn-small" onClick={fillAtRandom} disabled={needed <= 0}>
-              Fill remaining at random
+          <div>
+            <button type="button" className="btn btn-secondary btn-small" onClick={addOneOff}>
+              Add to this session
             </button>
           </div>
-          <ul className="list">
-            {bank.map((question) => (
-              <li key={question.id} className="card">
-                <label className="check">
-                  <input type="checkbox" checked={queue.some((item) => item.questionId === question.id)} onChange={() => toggleBank(question)} />
-                  <span>{question.text}</span>
-                </label>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+        </div>
 
-      <section className="stack-tight" aria-label="Session order">
-        <h2>
-          This session ({queue.length} of {config.stationCount})
-        </h2>
-        {queue.length === 0 ? <p className="hint">Add one question for each station.</p> : null}
+        {bank.length > 0 ? (
+          <div className="stack-tight">
+            <div className="spread">
+              <strong>Choose from your bank</strong>
+              <button type="button" className="btn btn-quiet btn-small" onClick={fillAtRandom} disabled={needed <= 0}>
+                Fill remaining at random
+              </button>
+            </div>
+            <ul className="list">
+              {bank.map((question) => (
+                <li key={question.id} className="pick">
+                  <label className="check">
+                    <input type="checkbox" checked={queue.some((item) => item.questionId === question.id)} onChange={() => toggleBank(question)} />
+                    <span>{question.text}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+      </section>
+
+      <section className="panel" aria-label="Session order">
+        <div className="panel-head">
+          <h2>
+            This session ({queue.length} of {config.stationCount})
+          </h2>
+          <p className="hint">Stations run in this order. Use Up and Down to change it.</p>
+        </div>
+        {queue.length === 0 ? <p className="empty">Add one question for each station.</p> : null}
         <ol className="list">
           {queue.map((item, index) => (
-            <li key={item.key} className="card spread">
+            <li key={item.key} className="queue-item">
+              <span className="station-badge" aria-hidden="true">
+                {index + 1}
+              </span>
               <span>
-                <span className="hint">Station {index + 1}. </span>
+                <span className="sr-only">Station {index + 1}. </span>
                 {item.text}
               </span>
               <span className="row">
@@ -249,17 +281,11 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
 
       {saveFailed ? <ErrorState message="We couldn't set up this session. Check that this browser allows site storage." /> : null}
 
-      <div className="spread">
+      <div className="action-bar">
         <p className="hint" role="status">
-          {needed > 0
-            ? `Add ${needed} more question${needed === 1 ? "" : "s"}.`
-            : needed < 0
-              ? `Remove ${-needed} question${needed === -1 ? "" : "s"}.`
-              : Object.keys(errors).length === 0
-                ? `Total time: ${formatDuration(totalSeconds(config))}`
-                : ""}
+          {status}
         </p>
-        <button type="button" className="btn btn-primary" disabled={!canStart} onClick={() => void start()}>
+        <button type="button" className="btn btn-gold btn-large" disabled={!canStart} onClick={() => void start()}>
           {starting ? "Setting up…" : "Continue to device check"}
         </button>
       </div>

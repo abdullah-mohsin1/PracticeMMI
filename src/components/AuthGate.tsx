@@ -33,25 +33,26 @@ export function AuthGate({ children }: { children: (user: User) => ReactNode }) 
     }
   };
 
-  if (access.status === "loading") return <p role="status">Loading…</p>;
+  if (access.status === "loading") return <p role="status" className="muted">Loading…</p>;
 
   if (access.status === "signedOut") {
     return (
-      <section>
+      <section className="welcome">
+        <h2>Welcome to PracticeMMI</h2>
         <p>Sign in with your Google account to see your private question library.</p>
-        <button type="button" onClick={signIn}>
+        <button type="button" className="btn btn-gold btn-large" onClick={signIn}>
           Sign in with Google
         </button>
-        {signInFailed && <p role="alert">We couldn&apos;t sign you in. Please try again.</p>}
+        {signInFailed && <p role="alert" className="field-error">We couldn&apos;t sign you in. Please try again.</p>}
       </section>
     );
   }
 
   return (
     <>
-      <p>
+      <p className="account-bar">
         Signed in as {access.user.email}.{" "}
-        <button type="button" onClick={() => signOut(getFirebase().auth)}>
+        <button type="button" className="btn btn-quiet btn-small" onClick={() => signOut(getFirebase().auth)}>
           Sign out
         </button>
       </p>

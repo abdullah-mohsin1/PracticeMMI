@@ -72,14 +72,14 @@ test("previews, corrects and imports a PDF, then finds the questions alongside m
   await page.getByLabel("Filter by source").selectOption("pdf_import");
   await expect(page.getByText("A question I typed myself")).toHaveCount(0);
   await expect(page.getByRole("main").getByRole("status")).toHaveText("Showing 3 of 3");
-  await page.getByLabel("Filter by category").selectOption("critical_thinking");
+  await page.getByRole("group", { name: "Filter by category" }).getByRole("button", { name: "Critical thinking" }).click();
   await expect(page.getByText(UNSORTED)).toBeVisible();
   await expect(page.getByRole("main").getByRole("status")).toHaveText("Showing 1 of 1");
   await page.getByLabel("Filter by source").selectOption("manual");
   await expect(page.getByText("No questions match these filters.")).toBeVisible();
 
   await page.getByLabel("Filter by source").selectOption("");
-  await page.getByLabel("Filter by category").selectOption("");
+  await page.getByRole("group", { name: "Filter by category" }).getByRole("button", { name: "All", exact: true }).click();
   await page.getByLabel("Search").fill("typed myself");
   await expect(page.getByRole("main").getByRole("status")).toHaveText("Showing 1 of 1");
 });

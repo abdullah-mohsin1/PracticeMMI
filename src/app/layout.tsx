@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SiteNav } from "@/components/SiteNav";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,16 +14,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <header className="topbar">
-          <Link href="/" className="brand">
-            PracticeMMI
-          </Link>
-          <nav className="row">
-            <Link href="/questions/">Your questions</Link>
-            <Link href="/practice/setup" className="btn btn-primary btn-small">
-              Start practice
+        <header className="site-header">
+          <div className="topbar">
+            <Link href="/" className="brand">
+              <span className="brand-mark" aria-hidden="true">
+                MMI
+              </span>
+              <span className="brand-text">PracticeMMI</span>
             </Link>
-          </nav>
+            <SiteNav />
+          </div>
         </header>
         <div className="page">{children}</div>
       </body>

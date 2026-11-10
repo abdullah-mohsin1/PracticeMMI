@@ -106,9 +106,9 @@ export function DeviceCheck({ session, onStart }: { session: PracticeSession; on
 
   return (
     <div className="stack">
-      <div className="stack-tight">
+      <div className="page-head">
         <h1>Check your camera and microphone</h1>
-        <p className="muted">
+        <p className="lead">
           {session.config.stationCount} station{session.config.stationCount === 1 ? "" : "s"}, {formatDuration(totalSeconds(session.config))} in total. Once you start, the
           clock doesn&apos;t pause. Your recordings stay in this browser.
         </p>
@@ -116,44 +116,50 @@ export function DeviceCheck({ session, onStart }: { session: PracticeSession; on
 
       {!recordingSupported ? <p className="alert alert-warning">This browser can&apos;t record. You can still practise with the timer.</p> : null}
 
-      <section className="card stack-tight">
-        <h2>Camera and microphone</h2>
+      <section className="panel" aria-labelledby="devices-heading">
+        <div className="panel-head">
+          <h2 id="devices-heading">Camera and microphone</h2>
+          <p className="hint">Your browser will ask for permission. Choose Allow.</p>
+        </div>
         {result === null ? (
-          <div>
-            <button type="button" className="btn btn-primary" onClick={() => void check()} disabled={checking}>
+          <div className="device-start">
+            <p className="muted">Turn them on to see yourself and test your sound before you begin.</p>
+            <button type="button" className="btn btn-primary btn-large" onClick={() => void check()} disabled={checking}>
               {checking ? "Waiting for permission…" : "Turn on camera and microphone"}
             </button>
           </div>
         ) : (
-          <>
-            {hasVideo ? <CameraPreview stream={stream} /> : null}
-            <p className={result.camera ? "status-bad" : "status-ok"} role="status">
-              Camera: {result.camera ? DEVICE_PROBLEM_TEXT[result.camera] : "working"}
-            </p>
-            <p className={result.microphone ? "status-bad" : "status-ok"} role="status">
-              Microphone: {result.microphone ? DEVICE_PROBLEM_TEXT[result.microphone] : "working. Speak to see the level move."}
-            </p>
-            {stream ? <MicLevel stream={stream} /> : null}
-            {result.camera || result.microphone ? (
-              <div>
-                <button type="button" className="btn btn-secondary btn-small" onClick={() => void check()} disabled={checking}>
-                  Try again
-                </button>
-              </div>
-            ) : null}
-            {stream && !hasVideo ? <p className="hint">You can continue with audio only.</p> : null}
-            {captureMode === "none" ? (
-              <label className="check">
-                <input type="checkbox" checked={acceptNoRecording} onChange={(event) => setAcceptNoRecording(event.target.checked)} />
-                <span>Continue without recording. You&apos;ll only have the timer and questions.</span>
-              </label>
-            ) : null}
-          </>
+          <div className="device-grid">
+            <div>{hasVideo ? <CameraPreview stream={stream} /> : <div className="device-start"><p className="muted">No camera picture</p></div>}</div>
+            <div className="status-list">
+              <p className={result.camera ? "status-bad" : "status-ok"} role="status">
+                Camera: {result.camera ? DEVICE_PROBLEM_TEXT[result.camera] : "working"}
+              </p>
+              <p className={result.microphone ? "status-bad" : "status-ok"} role="status">
+                Microphone: {result.microphone ? DEVICE_PROBLEM_TEXT[result.microphone] : "working. Speak to see the level move."}
+              </p>
+              {stream ? <MicLevel stream={stream} /> : null}
+              {result.camera || result.microphone ? (
+                <div>
+                  <button type="button" className="btn btn-secondary btn-small" onClick={() => void check()} disabled={checking}>
+                    Try again
+                  </button>
+                </div>
+              ) : null}
+              {stream && !hasVideo ? <p className="hint">You can continue with audio only.</p> : null}
+              {captureMode === "none" ? (
+                <label className="check">
+                  <input type="checkbox" checked={acceptNoRecording} onChange={(event) => setAcceptNoRecording(event.target.checked)} />
+                  <span>Continue without recording. You&apos;ll only have the timer and questions.</span>
+                </label>
+              ) : null}
+            </div>
+          </div>
         )}
       </section>
 
-      <section className="card stack-tight">
-        <h2>Live transcript</h2>
+      <section className="panel" aria-labelledby="transcript-heading">
+        <h2 id="transcript-heading">Live transcript</h2>
         {speechSupported ? (
           <>
             <label className="check">
@@ -177,8 +183,9 @@ export function DeviceCheck({ session, onStart }: { session: PracticeSession; on
         </p>
       ) : null}
 
-      <div>
-        <button type="button" className="btn btn-primary" disabled={!ready} onClick={begin}>
+      <div className="action-bar">
+        <p className="hint">{ready ? "The first question appears and the clock starts as soon as you press Start." : "Turn on your camera and microphone first."}</p>
+        <button type="button" className="btn btn-gold btn-large" disabled={!ready} onClick={begin}>
           Start practice
         </button>
       </div>
