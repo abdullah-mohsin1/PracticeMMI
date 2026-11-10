@@ -160,7 +160,7 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
       <section className="panel" aria-labelledby="format-heading">
         <div className="panel-head">
           <h2 id="format-heading">Choose a format</h2>
-          <p className="hint">Practise a few stations, or run a full mock interview.</p>
+          <p className="hint">Practice a few stations, or run a full mock interview.</p>
         </div>
         <div className="mode-options" role="radiogroup" aria-label="Practice type">
           <label className="mode-option">

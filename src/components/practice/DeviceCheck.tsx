@@ -114,7 +114,7 @@ export function DeviceCheck({ session, onStart }: { session: PracticeSession; on
         </p>
       </div>
 
-      {!recordingSupported ? <p className="alert alert-warning">This browser can&apos;t record. You can still practise with the timer.</p> : null}
+      {!recordingSupported ? <p className="alert alert-warning">This browser can&apos;t record. You can still practice with the timer.</p> : null}
 
       <section className="panel" aria-labelledby="devices-heading">
         <div className="panel-head">

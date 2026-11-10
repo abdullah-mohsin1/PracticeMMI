@@ -893,7 +893,7 @@ textarea {
   --bg: #ffffff;
 }
 
-/* More room for the camera while practising. */
+/* More room for the camera while practicing. */
 .page:has(.live-session) {
   max-width: 84rem;
 }

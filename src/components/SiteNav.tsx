@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const STEPS = ["Choose questions", "Check camera", "Practise"];
+const STEPS = ["Choose questions", "Check camera", "Practice"];
 
 /** While a session is being set up, the header shows where you are instead of a button to start again. */
 function stepFor(path: string): number {
