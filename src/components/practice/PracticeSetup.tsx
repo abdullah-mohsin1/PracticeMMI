@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { categoryShortLabel } from "@/components/QuestionFilters";
 import { ErrorState, LoadingRows } from "@/components/ui/states";
 import { useAsync } from "@/hooks/use-async";
 import { QUESTION_TEXT_LIMIT, type Question } from "@/lib/contracts";
@@ -236,7 +237,10 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
                 <li key={question.id} className="pick">
                   <label className="check">
                     <input type="checkbox" checked={queue.some((item) => item.questionId === question.id)} onChange={() => toggleBank(question)} />
-                    <span>{question.text}</span>
+                    <span className="pick-text">
+                      <span>{question.text}</span>
+                      {question.category ? <span className="chip">{categoryShortLabel(question.category)}</span> : null}
+                    </span>
                   </label>
                 </li>
               ))}
