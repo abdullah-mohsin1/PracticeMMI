@@ -7,7 +7,6 @@ import { useAsync } from "@/hooks/use-async";
 import { QUESTION_TEXT_LIMIT, type Question } from "@/lib/contracts";
 import { getServices } from "@/lib/services";
 import {
-  DEFAULT_PREP_SECONDS,
   DEFAULT_SPEAK_SECONDS,
   MOCK_STATIONS,
   formatDuration,
@@ -62,7 +61,6 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
   const router = useRouter();
   const [mode, setMode] = useState<PracticeMode>("custom");
   const [stationCount, setStationCount] = useState(1);
-  const [prepSeconds, setPrepSeconds] = useState(DEFAULT_PREP_SECONDS);
   const [speakSeconds, setSpeakSeconds] = useState(DEFAULT_SPEAK_SECONDS);
   const [queue, setQueue] = useState<QueueItem[]>(() => {
     const found = bank.find((question) => question.id === preselected);
@@ -73,7 +71,7 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
   const [starting, setStarting] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
 
-  const config = makeConfig(mode, stationCount, prepSeconds, speakSeconds);
+  const config = makeConfig(mode, stationCount, 0, speakSeconds);
   const errors = validateConfig(config);
   const needed = config.stationCount - queue.length;
   const canStart = Object.keys(errors).length === 0 && needed === 0 && !starting;
@@ -177,7 +175,6 @@ function SetupForm({ bank, preselected }: { bank: Question[]; preselected: strin
             ) : null}
           </div>
         ) : null}
-        <TimeField id="prep" label="Preparation time" seconds={prepSeconds} error={errors.prepSeconds} onChange={setPrepSeconds} />
         <TimeField id="speak" label="Speaking time" seconds={speakSeconds} error={errors.speakSeconds} onChange={setSpeakSeconds} />
       </div>
 

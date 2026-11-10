@@ -170,6 +170,9 @@ Each station's MediaRecorder writes a chunk to IndexedDB every two seconds, so a
 ### D-030: Treat browser speech recognition as best-effort — *Accepted*
 Timing and recording never depend on it. The device check says that Chrome, Edge and Safari can send microphone audio to Google or Apple, and offers an off switch, because this is the one path by which audio can leave the browser. On-device recognition is used when the browser already has it.
 
+### D-031: Each station is eight minutes of answering, with no preparation phase — *Owner direction*
+The setup screen no longer offers preparation time. Speaking time defaults to 8 minutes and can still be shortened for a quick run. The practice screen is always white, gives the camera the wider column and shows the question in a box.
+
 ## Open items
 
 | ID | Decision | Needed by |

@@ -84,6 +84,29 @@ a {
   display: none;
 }
 
+/* The practice screen is always white, whatever the system theme. */
+:root:has(.live-session) {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --text: #1c1917;
+  --muted: #6b6560;
+  --border: #e7e5e4;
+  --accent: #0f766e;
+  --accent-hover: #0d5f59;
+  --on-accent: #ffffff;
+  --danger: #b42318;
+  --danger-soft: #fef3f2;
+  --warning: #92590a;
+  --warning-soft: #fffaeb;
+  --ok: #067647;
+}
+
+/* More room for the camera while practising. */
+.page:has(.live-session) {
+  max-width: 84rem;
+}
+
 .brand {
   color: var(--text);
   font-weight: 650;
@@ -404,7 +427,7 @@ textarea {
 
 .runner {
   display: grid;
-  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
   gap: 1.5rem;
   align-items: start;
 }
@@ -415,6 +438,14 @@ textarea {
   font-variant-numeric: tabular-nums;
   line-height: 1;
   letter-spacing: -0.03em;
+}
+
+.question-box {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 8%);
 }
 
 .question-text {
