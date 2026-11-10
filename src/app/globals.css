@@ -70,6 +70,8 @@ a {
 .site-header {
   background: var(--navy);
   border-bottom: 4px solid var(--gold);
+  /* Queen's tricolour: blue, then gold, then red. */
+  box-shadow: 0 3px 0 var(--red);
   color: #ffffff;
 }
 
@@ -226,7 +228,7 @@ a {
   margin: 2rem auto;
   padding: 2rem;
   border: 1px solid var(--border);
-  border-top: 5px solid var(--gold);
+  border-top: 5px solid var(--red);
   border-radius: var(--radius);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -235,6 +237,16 @@ a {
 .page-head {
   display: grid;
   gap: 0.4rem;
+}
+
+.page-head h1::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 4px;
+  margin-top: 0.5rem;
+  border-radius: 2px;
+  background: var(--red);
 }
 
 .lead {
@@ -299,6 +311,17 @@ a {
   gap: 0.2rem;
 }
 
+.panel h2::before {
+  content: "";
+  display: inline-block;
+  width: 4px;
+  height: 1em;
+  margin-right: 0.55rem;
+  border-radius: 2px;
+  background: var(--red);
+  vertical-align: -0.15em;
+}
+
 .hero {
   display: flex;
   flex-wrap: wrap;
@@ -307,6 +330,7 @@ a {
   gap: 1.25rem;
   padding: 1.6rem 1.75rem;
   border-radius: var(--radius);
+  border-left: 6px solid var(--red);
   background: linear-gradient(135deg, var(--navy) 0%, #0b3a78 100%);
   color: #ffffff;
   box-shadow: var(--shadow);
