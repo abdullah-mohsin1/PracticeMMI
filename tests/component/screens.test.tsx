@@ -56,6 +56,26 @@ beforeEach(() => {
 afterEach(cleanup);
 
 describe("Dashboard", () => {
+  it("filters questions by category and by search", async () => {
+    const repository = useRepository(["Why medicine?", "Should doctors strike?", "A colleague is drunk at work"]);
+    repository.rows[1]!.category = "policy";
+    repository.rows[2]!.category = "ethical";
+    render(<Dashboard />);
+    await screen.findByText("Why medicine?");
+    const categories = screen.getByRole("group", { name: "Filter by category" });
+    fireEvent.click(within(categories).getByRole("button", { name: "Policy" }));
+    expect(screen.queryByText("Why medicine?")).toBeNull();
+    expect(screen.getByText("Should doctors strike?")).toBeTruthy();
+    expect(screen.getByRole("status").textContent).toBe("Showing 1 of 3 questions");
+    fireEvent.click(within(categories).getByRole("button", { name: "All" }));
+    fireEvent.change(screen.getByLabelText("Search questions"), { target: { value: "DRUNK" } });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(screen.getByText("A colleague is drunk at work")).toBeTruthy();
+    expect(screen.queryByText("Should doctors strike?")).toBeNull();
+    fireEvent.change(screen.getByLabelText("Search questions"), { target: { value: "nothing like this" } });
+    expect(screen.getByText(/No questions match/)).toBeTruthy();
+  });
+
   it("shows an empty bank", async () => {
     useRepository();
     render(<Dashboard />);

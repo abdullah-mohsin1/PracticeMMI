@@ -15,6 +15,7 @@ import {
   questionInputSchema,
   type Question,
 } from "@/lib/questions/schema";
+import { QuestionFilters } from "@/components/QuestionFilters";
 import styles from "./QuestionManager.module.css";
 
 const emptyForm = {
@@ -206,53 +207,36 @@ export function QuestionManager({ user }: { user: User }) {
       {questions === null && !error && <p role="status">Loading…</p>}
       {questions?.length === 0 && <p>You haven&apos;t added any questions yet.</p>}
       {questions !== null && questions.length > 0 && (
-        <div className={styles.filters}>
-          <label>
-            Search
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setVisibleCount(PAGE_SIZE);
-              }}
-            />
-          </label>
-          <label>
-            Filter by category
-            <select
-              value={categoryFilter}
-              onChange={(event) => {
-                setCategoryFilter(event.target.value);
-                setVisibleCount(PAGE_SIZE);
-              }}
-            >
-              <option value="">All categories</option>
-              {CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {CATEGORY_LABELS[category]}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Filter by source
-            <select
-              value={sourceFilter}
-              onChange={(event) => {
-                setSourceFilter(event.target.value);
-                setVisibleCount(PAGE_SIZE);
-              }}
-            >
-              <option value="">All sources</option>
-              <option value="manual">Added by you</option>
-              <option value="pdf_import">Imported</option>
-            </select>
-          </label>
-          <p role="status">
-            Showing {Math.min(visibleCount, filtered.length)} of {filtered.length}
-          </p>
-        </div>
+        <QuestionFilters
+          search={search}
+          onSearch={(term) => {
+            setSearch(term);
+            setVisibleCount(PAGE_SIZE);
+          }}
+          category={categoryFilter}
+          onCategory={(category) => {
+            setCategoryFilter(category);
+            setVisibleCount(PAGE_SIZE);
+          }}
+          status={`Showing ${Math.min(visibleCount, filtered.length)} of ${filtered.length}`}
+        >
+          <div className={styles.filters}>
+            <label>
+              Filter by source
+              <select
+                value={sourceFilter}
+                onChange={(event) => {
+                  setSourceFilter(event.target.value);
+                  setVisibleCount(PAGE_SIZE);
+                }}
+              >
+                <option value="">All sources</option>
+                <option value="manual">Added by you</option>
+                <option value="pdf_import">Imported</option>
+              </select>
+            </label>
+          </div>
+        </QuestionFilters>
       )}
       {questions !== null && questions.length > 0 && filtered.length === 0 && <p>No questions match these filters.</p>}
       <ul className={styles.list}>

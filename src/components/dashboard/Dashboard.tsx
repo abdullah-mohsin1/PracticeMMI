@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { QuestionEditor } from "@/components/dashboard/QuestionEditor";
+import { QuestionFilters, categoryShortLabel } from "@/components/QuestionFilters";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState, ErrorState, LoadingRows } from "@/components/ui/states";
 import { useAsync } from "@/hooks/use-async";
@@ -56,6 +57,7 @@ export function Dashboard() {
   const [busy, setBusy] = useState(false);
   const [deleteFailed, setDeleteFailed] = useState(false);
   const [filter, setFilter] = useState("");
+  const [category, setCategory] = useState("");
 
   const save = async (input: QuestionInput) => {
     if (editing === "new") await repository.create(input);
@@ -82,14 +84,24 @@ export function Dashboard() {
   const term = filter.trim().toLowerCase();
   const visible =
     questions.status === "ready"
-      ? questions.data.filter((question) => !term || `${question.text} ${question.category ?? ""}`.toLowerCase().includes(term))
+      ? questions.data.filter((question) => (!category || question.category === category) && (!term || question.text.toLowerCase().includes(term)))
       : [];
 
   return (
     <div className="stack">
+      <section className="hero" aria-labelledby="hero-heading">
+        <div className="stack-tight">
+          <h2 id="hero-heading">Ready to practise?</h2>
+          <p>Pick your questions, check your camera, then answer each station against the clock. Recordings stay on this device.</p>
+        </div>
+        <Link href="/practice/setup/" className="btn btn-gold btn-large">
+          Start a practice session
+        </Link>
+      </section>
+
       <div className="spread">
         <h1>Your questions</h1>
-        <button type="button" className="btn btn-secondary" onClick={() => setEditing("new")}>
+        <button type="button" className="btn btn-primary" onClick={() => setEditing("new")}>
           Add question
         </button>
       </div>
@@ -101,8 +113,19 @@ export function Dashboard() {
           <p>Your question bank is empty. Add a question, or start practice with a one-off question.</p>
         </EmptyState>
       ) : null}
-      {questions.status === "ready" && questions.data.length > 3 ? (
-        <input type="search" aria-label="Filter questions" placeholder="Filter questions" value={filter} onChange={(event) => setFilter(event.target.value)} />
+      {questions.status === "ready" && questions.data.length > 0 ? (
+        <QuestionFilters
+          search={filter}
+          onSearch={setFilter}
+          category={category}
+          onCategory={setCategory}
+          status={`Showing ${visible.length} of ${questions.data.length} question${questions.data.length === 1 ? "" : "s"}`}
+        />
+      ) : null}
+      {questions.status === "ready" && questions.data.length > 0 && visible.length === 0 ? (
+        <EmptyState>
+          <p>No questions match. Try another word or category.</p>
+        </EmptyState>
       ) : null}
       {visible.length > 0 ? (
         <ul className="list" aria-label="Question bank">
@@ -111,7 +134,7 @@ export function Dashboard() {
               <p style={{ whiteSpace: "pre-wrap" }}>{question.text}</p>
               {question.notes ? <p className="hint">{question.notes}</p> : null}
               <div className="spread">
-                <span>{question.category ? <span className="chip">{question.category}</span> : null}</span>
+                <span>{question.category ? <span className="chip">{categoryShortLabel(question.category)}</span> : null}</span>
                 <span className="row">
                   <button type="button" className="btn btn-quiet btn-small" aria-label={`Edit: ${question.text}`} onClick={() => setEditing(question)}>
                     Edit

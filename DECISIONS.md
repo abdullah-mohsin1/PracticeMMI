@@ -173,6 +173,9 @@ Timing and recording never depend on it. The device check says that Chrome, Edge
 ### D-031: Each station is eight minutes of answering, with no preparation phase — *Owner direction*
 The setup screen no longer offers preparation time. Speaking time defaults to 8 minutes and can still be shortened for a quick run. The practice screen is always white, gives the camera the wider column and shows the question in a box.
 
+### D-032: Queen's colours, a step tracker and category filters — *Owner direction*
+The app uses the Queen's University blue, gold and red. While a session is being set up, the header shows the steps (choose questions, check camera, practise) instead of a Start practice button. Both question lists share one search box and one-tap category filters. The app is now light-only.
+
 ## Open items
 
 | ID | Decision | Needed by |
