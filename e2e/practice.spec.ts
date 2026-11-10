@@ -40,19 +40,16 @@ test("practice from start to finish: timer, recording, playback, downloads and t
   });
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 3);
   await setTime(page, "Speaking time", 0, 12);
   await addOneOff(page, "Describe a time you changed your mind.");
   await continueAndCheckDevices(page);
   await expect(page.getByLabel("Your camera preview")).toBeVisible();
   await page.getByRole("button", { name: "Start practice" }).click();
 
-  await expect(page.getByTestId("phase-label")).toHaveText("Prepare");
+  await expect(page.getByTestId("phase-label")).toHaveText("Speak");
   await expect(page.getByRole("link", { name: "PracticeMMI" })).toBeHidden();
   await expect(page.getByTestId("question")).toHaveText("Describe a time you changed your mind.");
-  await expect(page.locator(".rec")).toBeHidden();
-
-  await expect(page.getByTestId("phase-label")).toHaveText("Speak", { timeout: 6000 });
+  await expect(page.locator("body")).toHaveCSS("background-color", "rgb(255, 255, 255)");
   await expect(page.locator(".rec")).toBeVisible();
   await expect(page.getByLabel("Your camera preview")).toBeVisible();
   await expect(page.getByTestId("live-transcript")).toContainText("this is my spoken answer");
@@ -95,7 +92,6 @@ test("moves from one station to the next by itself, with one question each", asy
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
-  await setTime(page, "Preparation time", 0, 1);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "First question");
   await addOneOff(page, "Second question");
@@ -125,7 +121,6 @@ test("explains a blocked camera and microphone, and can still run the timer", as
     };
   });
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
   await page.getByRole("button", { name: "Continue to device check" }).click();
@@ -151,7 +146,6 @@ test("continues with audio only when there's no camera", async ({ page }) => {
     };
   });
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
   await page.getByRole("button", { name: "Continue to device check" }).click();
@@ -165,7 +159,6 @@ test("continues with audio only when there's no camera", async ({ page }) => {
 test("without speech recognition it still records, and offers a typed transcript", async ({ page }) => {
   await noSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -195,7 +188,6 @@ test("a speech recognition failure leaves the recording intact", async ({ page }
     Object.assign(window, { webkitSpeechRecognition: Failing, SpeechRecognition: undefined });
   });
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -210,7 +202,6 @@ test("a disconnected device warns, keeps the timer going, and reconnecting start
   await fakeSpeech(page);
   await exposeStream(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 20);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -242,7 +233,6 @@ test("a disconnected device warns, keeps the timer going, and reconnecting start
 test("reloading mid-session keeps what was already captured", async ({ page }) => {
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -262,7 +252,6 @@ test("reloading mid-session keeps what was already captured", async ({ page }) =
 test("ending a session early keeps the recording", async ({ page }) => {
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -281,7 +270,6 @@ test("ending a session early keeps the recording", async ({ page }) => {
 test("deleting a session removes it", async ({ page }) => {
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -298,7 +286,6 @@ test("a new station never shows the previous station's transcript", async ({ pag
   await numberedFakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
-  await setTime(page, "Preparation time", 0, 3);
   await setTime(page, "Speaking time", 0, 10);
   await addOneOff(page, "First question");
   await addOneOff(page, "Second question");
@@ -308,9 +295,7 @@ test("a new station never shows the previous station's transcript", async ({ pag
   const live = page.getByTestId("live-transcript");
   await expect(live).toContainText("words from recognition 1", { timeout: 8000 });
   await expect(page.getByTestId("station-progress")).toHaveText("Station 2 of 2", { timeout: 14_000 });
-  await expect(page.getByTestId("phase-label")).toHaveText("Prepare");
-  await expect(live).toBeHidden();
-  await expect(page.getByTestId("phase-label")).toHaveText("Speak", { timeout: 6000 });
+  await expect(page.getByTestId("phase-label")).toHaveText("Speak");
   await expect(live).not.toContainText("recognition 1");
   await expect(live).toContainText("words from recognition 2");
 
@@ -323,7 +308,6 @@ test("a new station never shows the previous station's transcript", async ({ pag
 test("leaving a running interview always warns first", async ({ page }) => {
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 1, 0);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -361,7 +345,6 @@ test("leaving a running interview always warns first", async ({ page }) => {
 test("refreshing can't restart the clock: the session closes and stays closed", async ({ page }) => {
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 2, 0);
   await addOneOff(page, "A question");
   await continueAndCheckDevices(page);
@@ -395,7 +378,6 @@ test("a question imported from a PDF can be used in timed practice with a one-of
 
   await page.goto("/PracticeMMI/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await page.getByRole("checkbox", { name: IMPORTED }).check();
   await addOneOff(page, "A one-off prompt");
@@ -428,7 +410,6 @@ test("a session can mix a Firebase library question and a one-off prompt", async
 
   await page.goto("/PracticeMMI/practice/setup/");
   await page.getByLabel("Stations", { exact: true }).fill("2");
-  await setTime(page, "Preparation time", 0, 0);
   await setTime(page, "Speaking time", 0, 10);
   await page.getByRole("checkbox", { name: "A question from the library" }).check();
   await addOneOff(page, "A one-off prompt");

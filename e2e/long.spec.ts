@@ -48,13 +48,12 @@ function parseCountdown(text: string): number {
   return minutes! * 60 + seconds!;
 }
 
-test("a full six-minute response records and transcribes", async ({ page }) => {
+test("a full eight-minute response records and transcribes", async ({ page }) => {
   const seenErrors: string[] = [];
   page.on("pageerror", (error) => seenErrors.push(error.message));
   if (!realSpeech) await chromeLikeSpeech(page);
 
   await signInAndOpen(page, "/practice/setup/");
-  await setTime(page, "Preparation time", 0, 2);
   await addOneOff(page, "Why do you want to be a physician?");
   await continueAndCheckDevices(page);
   await expect(page.getByLabel("Transcribe what I say")).toBeChecked();
@@ -66,25 +65,25 @@ test("a full six-minute response records and transcribes", async ({ page }) => {
 
   // The countdown must match the wall clock through the whole answer.
   const drift: number[] = [];
-  while (Date.now() - speakingStarted < 330_000) {
+  while (Date.now() - speakingStarted < 450_000) {
     await page.waitForTimeout(30_000);
     const shown = parseCountdown((await page.getByTestId("countdown").textContent())!);
-    drift.push(Math.abs(shown - (360 - (Date.now() - speakingStarted) / 1000)));
+    drift.push(Math.abs(shown - (480 - (Date.now() - speakingStarted) / 1000)));
   }
   console.log("countdown drift (s):", drift.map((value) => value.toFixed(2)).join(", "));
-  expect(drift.length).toBeGreaterThanOrEqual(10);
-  expect(drift.length).toBeLessThanOrEqual(12);
+  expect(drift.length).toBeGreaterThanOrEqual(14);
+  expect(drift.length).toBeLessThanOrEqual(16);
   expect(Math.max(...drift)).toBeLessThan(2);
 
   await waitForReview(page, 60_000);
   const total = (Date.now() - speakingStarted) / 1000;
   console.log("speaking phase to review page (s):", total.toFixed(1));
-  expect(total).toBeLessThan(370);
+  expect(total).toBeLessThan(490);
 
   const facts = await playerFacts(page);
   console.log("player:", JSON.stringify(facts), await page.locator("video.player").evaluate((el: HTMLVideoElement) => el.src.slice(0, 10)));
-  expect(facts.duration).toBeGreaterThan(357);
-  expect(facts.duration).toBeLessThan(363);
+  expect(facts.duration).toBeGreaterThan(477);
+  expect(facts.duration).toBeLessThan(483);
 
   // Seek near the end and confirm that the end of the answer is really there.
   const video = page.locator("video.player");
@@ -124,7 +123,6 @@ test("a full mock runs eight stations with the two-minute break after station fo
   await fakeSpeech(page);
   await signInAndOpen(page, "/practice/setup/");
   await page.getByRole("radio", { name: /Full mock/ }).check();
-  await setTime(page, "Preparation time", 0, 1);
   await setTime(page, "Speaking time", 0, 10);
   for (let station = 1; station <= 8; station += 1) await addOneOff(page, `Mock question ${station}`);
   await continueAndCheckDevices(page);
@@ -145,7 +143,7 @@ test("a full mock runs eight stations with the two-minute break after station fo
     expect(Math.abs(shown - expected), `break countdown at sample ${sample}: ${samples.join(" ")}`).toBeLessThan(3);
   }
   console.log("break countdown shown/expected:", samples.join(" "));
-  await expect(page.getByTestId("phase-label")).toHaveText("Prepare", { timeout: 30_000 });
+  await expect(page.getByTestId("phase-label")).toHaveText("Speak", { timeout: 30_000 });
   const breakSeconds = (Date.now() - breakStarted) / 1000;
   console.log("break lasted (s):", breakSeconds.toFixed(1));
   expect(breakSeconds).toBeGreaterThan(118);

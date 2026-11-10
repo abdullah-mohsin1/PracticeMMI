@@ -159,9 +159,11 @@ function LiveSession({ session, choices }: { session: PracticeSession; choices: 
             </div>
           </div>
           {snapshot.question ? (
-            <p className="question-text" data-testid="question">
-              {snapshot.question}
-            </p>
+            <section className="question-box" aria-label="Question">
+              <p className="question-text" data-testid="question">
+                {snapshot.question}
+              </p>
+            </section>
           ) : (
             <p className="muted">Take a moment. The next station starts automatically.</p>
           )}

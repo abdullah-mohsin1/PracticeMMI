@@ -121,11 +121,11 @@ describe("Dashboard", () => {
 describe("PracticeSetup", () => {
   const continueButton = () => screen.getByRole("button", { name: "Continue to device check" }) as HTMLButtonElement;
 
-  it("defaults to 2 minutes of preparation and 6 minutes of speaking", async () => {
+  it("defaults to 8 minutes of speaking with no preparation time", async () => {
     useRepository();
     render(<PracticeSetup />);
-    expect(((await screen.findByLabelText("Preparation time minutes")) as HTMLInputElement).value).toBe("2");
-    expect((screen.getByLabelText("Speaking time minutes") as HTMLInputElement).value).toBe("6");
+    expect(((await screen.findByLabelText("Speaking time minutes")) as HTMLInputElement).value).toBe("8");
+    expect(screen.queryByLabelText("Preparation time minutes")).toBeNull();
   });
 
   it("starts with a one-off question and doesn't add it to the bank", async () => {
