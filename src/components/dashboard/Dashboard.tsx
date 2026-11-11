@@ -91,7 +91,7 @@ export function Dashboard() {
     <div className="stack">
       <section className="hero" aria-labelledby="hero-heading">
         <div className="stack-tight">
-          <h2 id="hero-heading">Ready to practise?</h2>
+          <h2 id="hero-heading">Ready to practice?</h2>
           <p>Pick your questions, check your camera, then answer each station against the clock. Recordings stay on this device.</p>
         </div>
         <Link href="/practice/setup/" className="btn btn-gold btn-large">
@@ -142,8 +142,8 @@ export function Dashboard() {
                   <button type="button" className="btn btn-quiet btn-small" aria-label={`Delete: ${question.text}`} onClick={() => setDeleting(question)}>
                     Delete
                   </button>
-                  <Link className="btn btn-secondary btn-small" aria-label={`Practise: ${question.text}`} href={`/practice/setup/?question=${question.id}`}>
-                    Practise
+                  <Link className="btn btn-secondary btn-small" aria-label={`Practice: ${question.text}`} href={`/practice/setup/?question=${question.id}`}>
+                    Practice
                   </Link>
                 </span>
               </div>
